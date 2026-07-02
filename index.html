@@ -64,7 +64,8 @@
     cursor: help;
     text-decoration: underline dotted var(--text-muted);
   }
-  input[type="number"] {
+  input[type="number"],
+  input[type="text"] {
     width: 100%;
     background: var(--surface);
     border: 1px solid var(--border);
@@ -73,7 +74,8 @@
     padding: 8px 10px;
     font-size: 14px;
   }
-  input[type="number"]:focus {
+  input[type="number"]:focus,
+  input[type="text"]:focus {
     outline: none;
     border-color: var(--accent);
   }
@@ -450,6 +452,55 @@
     font-weight: 600;
     font-style: italic;
   }
+  .segmented-control {
+    display: inline-flex;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0;
+    gap: 0;
+  }
+  .segment-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.15s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .segment-btn:hover {
+    color: var(--text-secondary);
+  }
+  .segment-btn.active {
+    background: var(--surface-2);
+    color: var(--text);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .label-segmented-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    height: 18px;
+  }
+  .hide {
+    display: none !important;
+  }
+  .input-unit-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .input-unit-row input {
+    flex: 1;
+    min-width: 0;
+  }
 </style>
 </head>
 <body>
@@ -477,8 +528,19 @@
           <input type="number" id="fratio" value="5" min="2" max="20" step="0.1">
         </div>
         <div>
-          <label for="flength">Focal length (mm) <span class="optional-tag">optional</span></label>
-          <input type="number" id="flength" min="100" max="5000" step="1" placeholder="e.g. 1000">
+          <div class="label-segmented-row">
+            <div class="segmented-control" id="mode-toggle">
+              <button type="button" class="segment-btn active" data-mode="fl">Focal Length</button>
+              <button type="button" class="segment-btn" data-mode="ap">Aperture</button>
+            </div>
+          </div>
+          <div class="input-unit-row">
+            <input type="text" id="fl-ap-input" placeholder="e.g. 1000 mm (optional)" inputmode="decimal">
+            <div class="segmented-control hide" id="unit-toggle">
+              <button type="button" class="segment-btn active" data-unit="mm">mm</button>
+              <button type="button" class="segment-btn" data-unit="in">in</button>
+            </div>
+          </div>
         </div>
         <div>
           <div class="step-label-row">
@@ -689,8 +751,20 @@ function updateStepModeUI(hasFlength) {
 
 function render() {
   const fratio = parseFloat(document.getElementById('fratio').value) || 5;
-  const flengthRaw = document.getElementById('flength').value;
-  const flength = flengthRaw ? parseFloat(flengthRaw) : null;
+  const inputValRaw = document.getElementById('fl-ap-input').value;
+  let flength = null;
+  if (inputValRaw) {
+    const inputVal = parseFloat(inputValRaw);
+    if (inputMode === 'fl') {
+      flength = inputVal;
+    } else {
+      let aperture = inputVal;
+      if (apertureUnit === 'in') {
+        aperture = inputVal * 25.4;
+      }
+      flength = aperture * fratio;
+    }
+  }
   const stepVal = parseFloat(document.getElementById('step').value);
   const epMin = parseFloat(document.getElementById('epmin').value) || 0.5;
   const epMax = parseFloat(document.getElementById('epmax').value) || 7;
@@ -868,7 +942,134 @@ function renderLineChart(elementId, values, axisFmt, pointFmt, lineClass, xLabel
 }
 
 document.getElementById('fratio').addEventListener('input', render);
-document.getElementById('flength').addEventListener('input', render);
+let inputMode = 'fl';
+let apertureUnit = 'mm';
+
+const modeButtons = document.querySelectorAll('#mode-toggle .segment-btn');
+const unitButtons = document.querySelectorAll('#unit-toggle .segment-btn');
+const flApInput = document.getElementById('fl-ap-input');
+const unitToggle = document.getElementById('unit-toggle');
+
+modeButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.classList.contains('active')) return;
+    
+    const rawVal = flApInput.value;
+    const fratio = parseFloat(document.getElementById('fratio').value) || 5;
+    
+    modeButtons.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    inputMode = btn.dataset.mode;
+    
+    if (inputMode === 'ap') {
+      unitToggle.classList.remove('hide');
+      if (rawVal) {
+        const fl = parseFloat(rawVal);
+        const aperture = fl / fratio;
+        if (apertureUnit === 'in') {
+          flApInput.value = (aperture / 25.4).toFixed(2);
+        } else {
+          flApInput.value = Math.round(aperture);
+        }
+      }
+      flApInput.placeholder = apertureUnit === 'mm' ? 'e.g. 200 mm (optional)' : 'e.g. 8 in (optional)';
+    } else {
+      unitToggle.classList.add('hide');
+      if (rawVal) {
+        const apVal = parseFloat(rawVal);
+        const aperture = apertureUnit === 'in' ? apVal * 25.4 : apVal;
+        flApInput.value = Math.round(aperture * fratio);
+      }
+      flApInput.placeholder = 'e.g. 1000 mm (optional)';
+    }
+    render();
+  });
+});
+
+unitButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.classList.contains('active')) return;
+    
+    const rawVal = flApInput.value;
+    
+    unitButtons.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    apertureUnit = btn.dataset.unit;
+    
+    if (rawVal) {
+      const val = parseFloat(rawVal);
+      if (apertureUnit === 'in') {
+        flApInput.value = (val / 25.4).toFixed(2);
+      } else {
+        flApInput.value = Math.round(val * 25.4);
+      }
+    }
+    flApInput.placeholder = apertureUnit === 'mm' ? 'e.g. 200 mm (optional)' : 'e.g. 8 in (optional)';
+    render();
+  });
+});
+
+flApInput.addEventListener('input', () => {
+  const rawVal = flApInput.value.trim();
+  if (!rawVal) {
+    render();
+    return;
+  }
+
+  // Regex patterns to match numbers followed by optional spaces and unit keywords
+  const mmRegex = /^([0-9.]+)\s*(?:mm|millimeters?)\s*$/i;
+  const inRegex = /^([0-9.]+)\s*(?:in\.?|inch|inches)\s*$/i;
+
+  let parsedVal = null;
+  let detectedUnit = null;
+
+  const mmMatch = rawVal.match(mmRegex);
+  const inMatch = rawVal.match(inRegex);
+
+  if (mmMatch) {
+    parsedVal = parseFloat(mmMatch[1]);
+    detectedUnit = 'mm';
+  } else if (inMatch) {
+    parsedVal = parseFloat(inMatch[1]);
+    detectedUnit = 'in';
+  }
+
+  if (detectedUnit && !isNaN(parsedVal)) {
+    if (inputMode === 'ap') {
+      apertureUnit = detectedUnit;
+      unitButtons.forEach(btn => {
+        if (btn.dataset.unit === detectedUnit) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+      flApInput.value = parsedVal;
+      flApInput.placeholder = apertureUnit === 'mm' ? 'e.g. 200 mm (optional)' : 'e.g. 8 in (optional)';
+    } else {
+      if (detectedUnit === 'mm') {
+        flApInput.value = parsedVal;
+      } else if (detectedUnit === 'in') {
+        // Automatically switch to Aperture mode in inches
+        inputMode = 'ap';
+        apertureUnit = 'in';
+        modeButtons.forEach(btn => {
+          if (btn.dataset.mode === 'ap') btn.classList.add('active');
+          else btn.classList.remove('active');
+        });
+        unitButtons.forEach(btn => {
+          if (btn.dataset.unit === 'in') btn.classList.add('active');
+          else btn.classList.remove('active');
+        });
+        unitToggle.classList.remove('hide');
+        flApInput.value = parsedVal;
+        flApInput.placeholder = 'e.g. 8 in (optional)';
+      }
+    }
+  }
+
+  render();
+});
 document.getElementById('step').addEventListener('input', render);
 document.getElementById('epmin').addEventListener('input', render);
 document.getElementById('epmax').addEventListener('input', render);
