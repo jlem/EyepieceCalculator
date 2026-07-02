@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Eyepiece Set Calculator</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.querySelector('.formulas') || document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\[', right: '\\]', display: true}, {left: '\\(', right: '\\)', display: false}]});"></script>
 <style>
   :root {
     --bg: #0f1216;
@@ -365,61 +368,87 @@
     border-top: 1px solid var(--border);
   }
   .formulas summary {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    cursor: pointer;
     list-style: none;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    cursor: pointer;
+    outline: none;
     user-select: none;
   }
   .formulas summary::-webkit-details-marker {
     display: none;
   }
-  .formulas summary::before {
-    content: "\25B8";
+  .formulas summary h2 {
     font-size: 11px;
+    font-weight: 600;
     color: var(--text-muted);
-    transition: transform 0.15s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: color 0.15s ease;
+  }
+  .formulas summary h2::before {
+    content: "";
     display: inline-block;
+    width: 5px;
+    height: 5px;
+    border-right: 1.5px solid var(--text-muted);
+    border-bottom: 1.5px solid var(--text-muted);
+    transform: rotate(-45deg);
+    transition: transform 0.15s ease, border-color 0.15s ease;
+    margin-bottom: 1px;
   }
-  .formulas[open] summary::before {
-    transform: rotate(90deg);
+  .formulas[open] summary h2::before {
+    transform: rotate(45deg);
   }
-  .formulas summary:hover {
-    color: var(--text);
-  }
-  .formulas .formulas-body {
-    margin-top: 1.25rem;
-  }
-  .formula-block {
-    margin-bottom: 1.1rem;
-  }
-  .formula-block:last-child {
-    margin-bottom: 0;
-  }
-  .formula-desc {
-    font-size: 13px;
+  .formulas summary:hover h2 {
     color: var(--text-secondary);
-    margin: 0 0 6px;
   }
-  .formula-expr {
+  .formulas summary:hover h2::before {
+    border-color: var(--text-secondary);
+  }
+  .formulas-body {
+    margin-top: 16px;
+  }
+  .formula-group {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 12px;
-    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-    font-size: 13px;
-    color: var(--text);
-    overflow-x: auto;
-    white-space: nowrap;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 20px;
   }
-  .formula-expr .var {
-    color: var(--accent);
+  .formula-group:last-child {
+    margin-bottom: 0;
+  }
+  .formula-group h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0 0 12px;
+  }
+  .formula-latex {
+    font-size: 15px;
+    color: var(--text-secondary);
+    margin: 12px 0;
+    display: flex;
+    justify-content: center;
+    overflow-x: auto;
+    background: transparent;
+    padding: 12px 8px;
+    border-radius: 6px;
+    border: none;
+  }
+  .formula-legend {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.65;
+    margin: 0;
+  }
+  .formula-legend .var {
+    color: #ffe082;
+    font-weight: 600;
+    font-style: italic;
   }
 </style>
 </head>
@@ -486,36 +515,61 @@
       <div id="table-wrap"></div>
 
       <details class="formulas">
-        <summary>Formulas</summary>
+        <summary><h2>Formula Reference</h2></summary>
+        
         <div class="formulas-body">
-          <div class="formula-block">
-            <p class="formula-desc">Exit pupil coverage ratio &mdash; from your min/max exit pupil (defaults: 0.5mm to 7mm, the eye's typical range):</p>
-            <div class="formula-expr">R = EP_max / EP_min</div>
+          <div class="formula-group">
+            <h3>Percent Step Mode</h3>
+            <div class="formula-latex">
+              \[ N = \left\lceil \frac{\ln(\color{#ffe082}{EP_{\max}} / \color{#ffe082}{EP_{\min}})}{\ln\left(1 + \frac{\color{#ffe082}{Step\%}}{100}\right)} \right\rceil + 1 \]
+            </div>
+            <p class="formula-legend">
+              Where:<br>
+              • <strong class="var">\(EP_{\max}\)</strong> and <strong class="var">\(EP_{\min}\)</strong> are the maximum and minimum exit pupil inputs.<br>
+              • <strong class="var">\(Step\%\)</strong> is the magnification step size percentage.<br>
+              • <strong>\(\lceil \dots \rceil\)</strong> denotes the ceiling function (rounding up to the next integer).
+            </p>
           </div>
 
-          <div class="formula-block">
-            <p class="formula-desc">Step multiplier &mdash; from the magnification step % (<span class="var">p</span>, e.g. 40% &rarr; 0.40):</p>
-            <div class="formula-expr">k = 1 + p</div>
+          <div class="formula-group">
+            <h3>Percent Brightness Step Mode</h3>
+            <div class="formula-latex">
+              \[ N = \left\lceil \frac{\ln(\color{#ffe082}{EP_{\max}} / \color{#ffe082}{EP_{\min}})}{\ln\left(\sqrt{1 + \frac{\color{#ffe082}{Step\%}}{100}}\right)} \right\rceil + 1 \]
+            </div>
+            <p class="formula-legend">
+              Where:<br>
+              • <strong class="var">\(EP_{\max}\)</strong> and <strong class="var">\(EP_{\min}\)</strong> are the maximum and minimum exit pupil inputs.<br>
+              • <strong class="var">\(Step\%\)</strong> is the brightness step size percentage.<br>
+              • <strong>\(\lceil \dots \rceil\)</strong> denotes the ceiling function (rounding up to the next integer).
+            </p>
           </div>
 
-          <div class="formula-block">
-            <p class="formula-desc">Number of steps needed to span the ratio R in increments of k:</p>
-            <div class="formula-expr">n = ln(R) / ln(k)</div>
+          <div class="formula-group">
+            <h3>Fixed Magnification Step Mode</h3>
+            <div class="formula-latex">
+              \[ N = \left\lceil \frac{\frac{\color{#ffe082}{F_l}}{\color{#ffe082}{EP_{\min}} \times \color{#ffe082}{F_r}} - \frac{\color{#ffe082}{F_l}}{\color{#ffe082}{EP_{\max}} \times \color{#ffe082}{F_r}}}{\color{#ffe082}{Step}} \right\rceil + 1 \]
+            </div>
+            <p class="formula-legend">
+              Where:<br>
+              • <strong class="var">\(F_l\)</strong> is the telescope focal length.<br>
+              • <strong class="var">\(F_r\)</strong> is the telescope focal ratio.<br>
+              • <strong class="var">\(EP_{\max}\)</strong> and <strong class="var">\(EP_{\min}\)</strong> are the maximum and minimum exit pupil inputs.<br>
+              • <strong class="var">\(Step\)</strong> is the desired magnification step size (e.g. \(40\text{x}\)).<br>
+              • <strong>\(\lceil \dots \rceil\)</strong> denotes the ceiling function (rounding up to the next integer).
+            </p>
           </div>
 
-          <div class="formula-block">
-            <p class="formula-desc">Eyepiece count &mdash; steps rounded up, plus one endpoint:</p>
-            <div class="formula-expr">N = ceil( ln(R) / ln(1 + p) ) + 1</div>
-          </div>
-
-          <div class="formula-block">
-            <p class="formula-desc">Exit pupil at eyepiece i (i = 1 ... N), spaced evenly on a log scale from EP_min to EP_max:</p>
-            <div class="formula-expr">EP_i = EP_min &times; k^( i &times; n / (N &minus; 1) )</div>
-          </div>
-
-          <div class="formula-block">
-            <p class="formula-desc">Focal length of eyepiece i, given telescope focal ratio <span class="var">f/#</span>:</p>
-            <div class="formula-expr">FL_i = EP_i &times; f/#</div>
+          <div class="formula-group">
+            <h3>Fixed Exit Pupil Step Mode</h3>
+            <div class="formula-latex">
+              \[ N = \left\lceil \frac{\color{#ffe082}{EP_{\max}} - \color{#ffe082}{EP_{\min}}}{\color{#ffe082}{Step}} \right\rceil + 1 \]
+            </div>
+            <p class="formula-legend">
+              Where:<br>
+              • <strong class="var">\(EP_{\max}\)</strong> and <strong class="var">\(EP_{\min}\)</strong> are the maximum and minimum exit pupil inputs.<br>
+              • <strong class="var">\(Step\)</strong> is the desired exit pupil step size (in mm).<br>
+              • <strong>\(\lceil \dots \rceil\)</strong> denotes the ceiling function (rounding up to the next integer).
+            </p>
           </div>
         </div>
       </details>
