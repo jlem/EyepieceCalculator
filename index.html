@@ -592,10 +592,11 @@
           <div class="formula-group">
             <h3>Percent Step Mode</h3>
             <div class="formula-latex">
-              \[ N = \left\lceil \frac{\ln(\color{#ffe082}{EP_{\max}} / \color{#ffe082}{EP_{\min}})}{\ln\left(1 + \frac{\color{#ffe082}{Step\%}}{100}\right)} \right\rceil + 1 \]
+              \[ {\color{#ffe082} N} = \left\lceil \frac{\ln({\color{#ffe082} EP_{\max}} / {\color{#ffe082} EP_{\min}})}{\ln\left(1 + \frac{{\color{#ffe082} Step\%}}{100}\right)} \right\rceil + 1 \]
             </div>
             <p class="formula-legend">
               Where:<br>
+              • <strong class="var">\(N\)</strong> is the recommended quantity of eyepieces in your set.<br>
               • <strong class="var">\(EP_{\max}\)</strong> and <strong class="var">\(EP_{\min}\)</strong> are the maximum and minimum exit pupil inputs.<br>
               • <strong class="var">\(Step\%\)</strong> is the magnification step size percentage.<br>
               • <strong>\(\lceil \dots \rceil\)</strong> denotes the ceiling function (rounding up to the next integer).
@@ -605,10 +606,11 @@
           <div class="formula-group">
             <h3>Percent Brightness Step Mode</h3>
             <div class="formula-latex">
-              \[ N = \left\lceil \frac{\ln(\color{#ffe082}{EP_{\max}} / \color{#ffe082}{EP_{\min}})}{\ln\left(\sqrt{1 + \frac{\color{#ffe082}{Step\%}}{100}}\right)} \right\rceil + 1 \]
+              \[ {\color{#ffe082} N} = \left\lceil \frac{\ln({\color{#ffe082} EP_{\max}} / {\color{#ffe082} EP_{\min}})}{\ln\left(\sqrt{1 + \frac{{\color{#ffe082} Step\%}}{100}}\right)} \right\rceil + 1 \]
             </div>
             <p class="formula-legend">
               Where:<br>
+              • <strong class="var">\(N\)</strong> is the recommended quantity of eyepieces in your set.<br>
               • <strong class="var">\(EP_{\max}\)</strong> and <strong class="var">\(EP_{\min}\)</strong> are the maximum and minimum exit pupil inputs.<br>
               • <strong class="var">\(Step\%\)</strong> is the brightness step size percentage.<br>
               • <strong>\(\lceil \dots \rceil\)</strong> denotes the ceiling function (rounding up to the next integer).
@@ -618,10 +620,11 @@
           <div class="formula-group">
             <h3>Fixed Magnification Step Mode</h3>
             <div class="formula-latex">
-              \[ N = \left\lceil \frac{\frac{\color{#ffe082}{F_l}}{\color{#ffe082}{EP_{\min}} \times \color{#ffe082}{F_r}} - \frac{\color{#ffe082}{F_l}}{\color{#ffe082}{EP_{\max}} \times \color{#ffe082}{F_r}}}{\color{#ffe082}{Step}} \right\rceil + 1 \]
+              \[ {\color{#ffe082} N} = \left\lceil \frac{\frac{{\color{#ffe082} F_l}}{{\color{#ffe082} EP_{\min}} \times {\color{#ffe082} F_r}} - \frac{{\color{#ffe082} F_l}}{{\color{#ffe082} EP_{\max}} \times {\color{#ffe082} F_r}}}{{\color{#ffe082} Step}} \right\rceil + 1 \]
             </div>
             <p class="formula-legend">
               Where:<br>
+              • <strong class="var">\(N\)</strong> is the recommended quantity of eyepieces in your set.<br>
               • <strong class="var">\(F_l\)</strong> is the telescope focal length.<br>
               • <strong class="var">\(F_r\)</strong> is the telescope focal ratio.<br>
               • <strong class="var">\(EP_{\max}\)</strong> and <strong class="var">\(EP_{\min}\)</strong> are the maximum and minimum exit pupil inputs.<br>
@@ -633,10 +636,11 @@
           <div class="formula-group">
             <h3>Fixed Exit Pupil Step Mode</h3>
             <div class="formula-latex">
-              \[ N = \left\lceil \frac{\color{#ffe082}{EP_{\max}} - \color{#ffe082}{EP_{\min}}}{\color{#ffe082}{Step}} \right\rceil + 1 \]
+              \[ {\color{#ffe082} N} = \left\lceil \frac{{\color{#ffe082} EP_{\max}} - {\color{#ffe082} EP_{\min}}}{{\color{#ffe082} Step}} \right\rceil + 1 \]
             </div>
             <p class="formula-legend">
               Where:<br>
+              • <strong class="var">\(N\)</strong> is the recommended quantity of eyepieces in your set.<br>
               • <strong class="var">\(EP_{\max}\)</strong> and <strong class="var">\(EP_{\min}\)</strong> are the maximum and minimum exit pupil inputs.<br>
               • <strong class="var">\(Step\)</strong> is the desired exit pupil step size (in mm).<br>
               • <strong>\(\lceil \dots \rceil\)</strong> denotes the ceiling function (rounding up to the next integer).
@@ -890,14 +894,12 @@ function renderLineChart(elementId, values, axisFmt, pointFmt, lineClass, xLabel
   const element = document.getElementById(elementId);
   if (!element) return;
 
-  // Measure parent container to make chart size fully responsive
   const rect = element.parentNode.getBoundingClientRect();
-  const padding = 32; // padding (16px left + 16px right)
+  const padding = 32;
   const labelEl = element.parentNode.querySelector('.chart-label');
   const labelH = labelEl ? labelEl.offsetHeight : 20;
   
   const parentW = rect.width - padding;
-  // Account for padding + label height + bottom spacing
   const parentH = rect.height - padding - labelH - 12;
 
   const W = parentW > 0 ? parentW : 560;
