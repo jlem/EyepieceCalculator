@@ -148,9 +148,55 @@
     font-weight: 600;
     margin: 0;
   }
+  .table-row {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+  }
+  .table-row #table-wrap {
+    flex: 1;
+    min-width: 0;
+  }
+  .ladder-col {
+    flex-shrink: 0;
+    width: 100px;
+  }
+  .ladder-title {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: center;
+    margin: 0 0 6px;
+  }
+  #ladder-v .axis-line {
+    stroke: var(--border);
+    stroke-width: 1;
+  }
+  #ladder-v .fl-tick {
+    stroke: var(--accent);
+    stroke-width: 2;
+  }
+  #ladder-v .fl-text {
+    fill: var(--text-secondary);
+    font-size: 10px;
+  }
+  #ladder-v .gap-text {
+    fill: var(--text-muted);
+    font-size: 9px;
+  }
   table {
     width: 100%;
     border-collapse: collapse;
+  }
+  @media (max-width: 480px) {
+    .table-row {
+      flex-direction: column;
+    }
+    .ladder-col {
+      width: 100%;
+    }
+    #ladder-v {
+      height: 160px;
+    }
   }
   thead th {
     text-align: left;
@@ -315,7 +361,13 @@
     </div>
   </div>
 
-  <div id="table-wrap"></div>
+  <div class="table-row">
+    <div id="table-wrap"></div>
+    <div class="ladder-col">
+      <p class="ladder-title" id="ladder-title">Exit pupil</p>
+      <svg id="ladder-v" viewBox="0 0 100 300"></svg>
+    </div>
+  </div>
 
   <p class="chart-label">Eyepiece focal lengths</p>
   <svg id="fl-chart" viewBox="0 0 560 240"></svg>
@@ -396,7 +448,36 @@ function render() {
     '<table><thead><tr><th>#</th><th>Focal length</th><th>Exit pupil</th></tr></thead>' +
     '<tbody>' + rows + '</tbody></table>';
 
+  document.getElementById('ladder-title').textContent = 'Exit pupil (' + epMin.toFixed(1) + '\u2013' + epMax.toFixed(1) + 'mm)';
+  renderLadder(eps, epMin, epMax);
   renderChart(fls);
+}
+
+function renderLadder(eps, epMin, epMax) {
+  const W = 100, H = 300;
+  const padT = 14, padB = 14;
+  const plotH = H - padT - padB;
+  const x = 50;
+
+  const logMin = Math.log(epMin), logMax = Math.log(epMax);
+  // top = epMax, bottom = epMin
+  const yAt = ep => padT + plotH - ((Math.log(ep) - logMin) / (logMax - logMin)) * plotH;
+
+  let svg = '<line class="axis-line" x1="' + x + '" y1="' + padT + '" x2="' + x + '" y2="' + (padT + plotH) + '"></line>';
+
+  eps.forEach((ep, i) => {
+    const y = yAt(ep);
+    svg += '<line class="fl-tick" x1="' + (x - 5) + '" y1="' + y + '" x2="' + (x + 5) + '" y2="' + y + '"></line>';
+    svg += '<text class="fl-text" x="' + (x + 10) + '" y="' + (y + 3) + '">' + ep.toFixed(1) + '</text>';
+  });
+
+  for (let i = 0; i < eps.length - 1; i++) {
+    const yMid = (yAt(eps[i]) + yAt(eps[i + 1])) / 2;
+    const jumpPct = (eps[i + 1] / eps[i] - 1) * 100;
+    svg += '<text class="gap-text" x="' + (x - 10) + '" y="' + (yMid + 3) + '" text-anchor="end">' + jumpPct.toFixed(0) + '%</text>';
+  }
+
+  document.getElementById('ladder-v').innerHTML = svg;
 }
 
 function renderChart(fls) {
