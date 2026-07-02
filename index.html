@@ -243,6 +243,10 @@
     border-radius: 12px;
     padding: 16px;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    min-height: 0;
   }
   .charts-grid {
     display: flex;
@@ -250,32 +254,61 @@
     gap: 16px;
     margin-top: 2rem;
   }
-  @media (min-width: 1024px) {
+  @media (min-width: 1124px) {
     main {
       max-width: 100%;
+      height: calc(100vh - 5rem);
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
     }
     .app-layout {
       display: grid;
       grid-template-columns: minmax(auto, 675px) 1fr;
       gap: 32px;
-      align-items: start;
+      align-items: stretch;
+      flex: 1;
+      min-height: 0;
+    }
+    .left-panel {
+      height: 100%;
+      overflow-y: auto;
+      padding-right: 8px;
+    }
+    .right-panel {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
     }
     .charts-grid {
       display: grid;
       grid-template-columns: 1fr;
+      grid-auto-rows: 1fr;
       gap: 20px;
+      height: 100%;
       margin-top: 0;
+      min-height: 0;
     }
   }
   @media (min-width: 1400px) {
     .charts-grid {
       grid-template-columns: 1fr 1fr;
+      grid-auto-rows: 1fr;
       gap: 24px;
     }
   }
   .line-chart {
     width: 100%;
-    height: auto;
+    height: 240px;
+    display: block;
+    min-height: 0;
+  }
+  @media (min-width: 1124px) {
+    .line-chart {
+      height: 100%;
+      flex: 1;
+    }
   }
   .line-chart .axis-line {
     stroke: var(--border);
@@ -451,6 +484,41 @@
       </div>
 
       <div id="table-wrap"></div>
+
+      <details class="formulas">
+        <summary>Formulas</summary>
+        <div class="formulas-body">
+          <div class="formula-block">
+            <p class="formula-desc">Exit pupil coverage ratio &mdash; from your min/max exit pupil (defaults: 0.5mm to 7mm, the eye's typical range):</p>
+            <div class="formula-expr">R = EP_max / EP_min</div>
+          </div>
+
+          <div class="formula-block">
+            <p class="formula-desc">Step multiplier &mdash; from the magnification step % (<span class="var">p</span>, e.g. 40% &rarr; 0.40):</p>
+            <div class="formula-expr">k = 1 + p</div>
+          </div>
+
+          <div class="formula-block">
+            <p class="formula-desc">Number of steps needed to span the ratio R in increments of k:</p>
+            <div class="formula-expr">n = ln(R) / ln(k)</div>
+          </div>
+
+          <div class="formula-block">
+            <p class="formula-desc">Eyepiece count &mdash; steps rounded up, plus one endpoint:</p>
+            <div class="formula-expr">N = ceil( ln(R) / ln(1 + p) ) + 1</div>
+          </div>
+
+          <div class="formula-block">
+            <p class="formula-desc">Exit pupil at eyepiece i (i = 1 ... N), spaced evenly on a log scale from EP_min to EP_max:</p>
+            <div class="formula-expr">EP_i = EP_min &times; k^( i &times; n / (N &minus; 1) )</div>
+          </div>
+
+          <div class="formula-block">
+            <p class="formula-desc">Focal length of eyepiece i, given telescope focal ratio <span class="var">f/#</span>:</p>
+            <div class="formula-expr">FL_i = EP_i &times; f/#</div>
+          </div>
+        </div>
+      </details>
     </div>
 
     <!-- Right Column: Charts -->
@@ -478,41 +546,6 @@
       </div>
     </div>
   </div>
-
-  <details class="formulas">
-    <summary>Formulas</summary>
-    <div class="formulas-body">
-      <div class="formula-block">
-        <p class="formula-desc">Exit pupil coverage ratio &mdash; from your min/max exit pupil (defaults: 0.5mm to 7mm, the eye's typical range):</p>
-        <div class="formula-expr">R = EP_max / EP_min</div>
-      </div>
-
-      <div class="formula-block">
-        <p class="formula-desc">Step multiplier &mdash; from the magnification step % (<span class="var">p</span>, e.g. 40% &rarr; 0.40):</p>
-        <div class="formula-expr">k = 1 + p</div>
-      </div>
-
-      <div class="formula-block">
-        <p class="formula-desc">Number of steps needed to span the ratio R in increments of k:</p>
-        <div class="formula-expr">n = ln(R) / ln(k)</div>
-      </div>
-
-      <div class="formula-block">
-        <p class="formula-desc">Eyepiece count &mdash; steps rounded up, plus one endpoint:</p>
-        <div class="formula-expr">N = ceil( ln(R) / ln(1 + p) ) + 1</div>
-      </div>
-
-      <div class="formula-block">
-        <p class="formula-desc">Exit pupil at eyepiece i (i = 1 ... N), spaced evenly on a log scale from EP_min to EP_max:</p>
-        <div class="formula-expr">EP_i = EP_min &times; k^( i &times; n / (N &minus; 1) )</div>
-      </div>
-
-      <div class="formula-block">
-        <p class="formula-desc">Focal length of eyepiece i, given telescope focal ratio <span class="var">f/#</span>:</p>
-        <div class="formula-expr">FL_i = EP_i &times; f/#</div>
-      </div>
-    </div>
-  </details>
 </main>
 
 <script>
@@ -714,13 +747,30 @@ function renderLineChart(elementId, values, axisFmt, pointFmt, lineClass, xLabel
   pointFmt = pointFmt || (v => v.toFixed(1));
   lineClass = lineClass || 'fl';
 
-  const W = 560, H = 240;
+  const element = document.getElementById(elementId);
+  if (!element) return;
+
+  // Measure parent container to make chart size fully responsive
+  const rect = element.parentNode.getBoundingClientRect();
+  const padding = 32; // padding (16px left + 16px right)
+  const labelEl = element.parentNode.querySelector('.chart-label');
+  const labelH = labelEl ? labelEl.offsetHeight : 20;
+  
+  const parentW = rect.width - padding;
+  // Account for padding + label height + bottom spacing
+  const parentH = rect.height - padding - labelH - 12;
+
+  const W = parentW > 0 ? parentW : 560;
+  const H = parentH > 0 ? parentH : 240;
+
+  element.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+
   const padL = 40, padR = 20, padT = 20, padB = 30;
   const plotW = W - padL - padR;
   const plotH = H - padT - padB;
 
   const minV = 0;
-  const maxV = Math.max(...values) * 1.1;
+  const maxV = Math.max(...values) * 1.1 || 1;
   const N = values.length;
 
   const xAt = i => padL + (N === 1 ? 0 : (i / (N - 1)) * plotW);
@@ -746,7 +796,9 @@ function renderLineChart(elementId, values, axisFmt, pointFmt, lineClass, xLabel
     const x = xAt(i), y = yAt(v);
     path += (i === 0 ? 'M' : 'L') + x + ' ' + y + ' ';
   });
-  svg += '<path class="' + lineClass + '-line" d="' + path + '"></path>';
+  if (path) {
+    svg += '<path class="' + lineClass + '-line" d="' + path + '"></path>';
+  }
 
   // dots + point labels + x-axis eyepiece numbers
   values.forEach((v, i) => {
@@ -758,7 +810,7 @@ function renderLineChart(elementId, values, axisFmt, pointFmt, lineClass, xLabel
     svg += '<text class="axis-text" x="' + x + '" y="' + (padT + plotH + 16) + '" text-anchor="middle">' + xLabelText + '</text>';
   });
 
-  document.getElementById(elementId).innerHTML = svg;
+  element.innerHTML = svg;
 }
 
 document.getElementById('fratio').addEventListener('input', render);
@@ -795,6 +847,11 @@ document.getElementById('step-mode-select').addEventListener('change', function 
     slider.value = stepValues[stepMode];
   }
   render();
+});
+let resizeTimeout;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(render, 50);
 });
 render();
 </script>
