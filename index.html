@@ -43,9 +43,13 @@
   }
   .controls {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 16px;
     margin-bottom: 1.5rem;
+  }
+  .optional-tag {
+    color: var(--text-muted);
+    font-weight: 400;
   }
   label {
     font-size: 13px;
@@ -101,6 +105,42 @@
     min-width: 40px;
     text-align: right;
   }
+  .step-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .step-label-row label {
+    margin-bottom: 0;
+  }
+  .step-mode-toggle {
+    display: flex;
+    gap: 2px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px;
+  }
+  .step-mode-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .step-mode-btn.active {
+    background: var(--accent-dark);
+    color: var(--text);
+  }
+  .step-mode-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
   .advanced-link {
     display: inline-block;
     font-size: 12px;
@@ -148,54 +188,13 @@
     font-weight: 600;
     margin: 0;
   }
-  .table-row {
-    display: flex;
-    gap: 24px;
-    align-items: flex-start;
-  }
-  .table-row #table-wrap {
-    flex: 1;
-    min-width: 0;
-  }
-  .ladder-col {
-    flex-shrink: 0;
-    width: 100px;
-  }
-  .ladder-title {
-    font-size: 11px;
-    color: var(--text-muted);
-    text-align: center;
-    margin: 0 0 6px;
-  }
-  #ladder-v .axis-line {
-    stroke: var(--border);
-    stroke-width: 1;
-  }
-  #ladder-v .fl-tick {
-    stroke: var(--accent);
-    stroke-width: 2;
-  }
-  #ladder-v .fl-text {
-    fill: var(--text-secondary);
-    font-size: 10px;
-  }
-  #ladder-v .gap-text {
-    fill: var(--text-muted);
-    font-size: 9px;
-  }
   table {
     width: 100%;
     border-collapse: collapse;
   }
   @media (max-width: 480px) {
-    .table-row {
-      flex-direction: column;
-    }
-    .ladder-col {
-      width: 100%;
-    }
-    #ladder-v {
-      height: 160px;
+    .controls {
+      grid-template-columns: 1fr;
     }
   }
   thead th {
@@ -222,32 +221,32 @@
     color: var(--text-secondary);
     margin: 2rem 0 10px;
   }
-  #fl-chart {
+  .line-chart {
     width: 100%;
     height: auto;
   }
-  #fl-chart .axis-line {
+  .line-chart .axis-line {
     stroke: var(--border);
     stroke-width: 1;
   }
-  #fl-chart .grid-line {
+  .line-chart .grid-line {
     stroke: var(--border);
     stroke-width: 1;
     stroke-dasharray: 2 3;
   }
-  #fl-chart .fl-line {
+  .line-chart .fl-line {
     fill: none;
     stroke: var(--accent);
     stroke-width: 2;
   }
-  #fl-chart .fl-dot {
+  .line-chart .fl-dot {
     fill: var(--accent);
   }
-  #fl-chart .axis-text {
+  .line-chart .axis-text {
     fill: var(--text-muted);
     font-size: 10px;
   }
-  #fl-chart .point-text {
+  .line-chart .point-text {
     fill: var(--text-secondary);
     font-size: 10px;
   }
@@ -326,7 +325,17 @@
       <input type="number" id="fratio" value="5" min="2" max="20" step="0.1">
     </div>
     <div>
-      <label for="step">Magnification step</label>
+      <label for="flength">Focal length (mm) <span class="optional-tag">optional</span></label>
+      <input type="number" id="flength" min="100" max="5000" step="1" placeholder="e.g. 1000">
+    </div>
+    <div>
+      <div class="step-label-row">
+        <label for="step">Magnification step</label>
+        <div class="step-mode-toggle" id="step-mode-toggle">
+          <button type="button" class="step-mode-btn active" data-mode="percent">%</button>
+          <button type="button" class="step-mode-btn" data-mode="fixed">x</button>
+        </div>
+      </div>
       <div class="step-row">
         <input type="range" id="step" min="20" max="60" value="40" step="1">
         <span class="step-out" id="step-out">40%</span>
@@ -361,16 +370,15 @@
     </div>
   </div>
 
-  <div class="table-row">
-    <div id="table-wrap"></div>
-    <div class="ladder-col">
-      <p class="ladder-title" id="ladder-title">Exit pupil</p>
-      <svg id="ladder-v" viewBox="0 0 100 300"></svg>
-    </div>
-  </div>
+  <div id="table-wrap"></div>
 
   <p class="chart-label">Eyepiece focal lengths</p>
-  <svg id="fl-chart" viewBox="0 0 560 240"></svg>
+  <svg id="fl-chart" class="line-chart" viewBox="0 0 560 240"></svg>
+
+  <div id="mag-chart-wrap">
+    <p class="chart-label">Magnification</p>
+    <svg id="mag-chart" class="line-chart" viewBox="0 0 560 240"></svg>
+  </div>
 
   <details class="formulas">
     <summary>Formulas</summary>
@@ -409,6 +417,8 @@
 </main>
 
 <script>
+let stepMode = 'percent';
+
 function computeSet(fratio, stepPct, epMin, epMax) {
   const R = epMax / epMin;
   const k = 1 + stepPct / 100;
@@ -424,14 +434,49 @@ function computeSet(fratio, stepPct, epMin, epMax) {
   return { N, eps, fls };
 }
 
+function computeSetFixed(fratio, stepVal, epMin, epMax, flength) {
+  const D = flength / fratio;
+  const mMax = D / epMin;
+  const mMin = D / epMax;
+  const range = mMax - mMin;
+  const N = Math.ceil(range / stepVal) + 1;
+  const fls = [];
+  const eps = [];
+  for (let i = 0; i < N; i++) {
+    const m = mMax - i * (range / (N - 1));
+    fls.push(flength / m);
+    eps.push(Math.min(D / m, epMax));
+  }
+  eps[eps.length - 1] = epMax;
+  fls[fls.length - 1] = flength / mMin;
+  return { N, eps, fls };
+}
+
+function updateStepModeUI(hasFlength) {
+  const percentBtn = document.querySelector('.step-mode-btn[data-mode="percent"]');
+  const fixedBtn = document.querySelector('.step-mode-btn[data-mode="fixed"]');
+  fixedBtn.disabled = !hasFlength;
+  if (!hasFlength && stepMode === 'fixed') {
+    stepMode = 'percent';
+  }
+  percentBtn.classList.toggle('active', stepMode === 'percent');
+  fixedBtn.classList.toggle('active', stepMode === 'fixed');
+}
+
 function render() {
   const fratio = parseFloat(document.getElementById('fratio').value) || 5;
-  const stepPct = parseFloat(document.getElementById('step').value);
+  const flengthRaw = document.getElementById('flength').value;
+  const flength = flengthRaw ? parseFloat(flengthRaw) : null;
+  const stepVal = parseFloat(document.getElementById('step').value);
   const epMin = parseFloat(document.getElementById('epmin').value) || 0.5;
   const epMax = parseFloat(document.getElementById('epmax').value) || 7;
-  document.getElementById('step-out').textContent = stepPct + '%';
 
-  const { N, eps, fls } = computeSet(fratio, stepPct, epMin, epMax);
+  updateStepModeUI(!!flength);
+  document.getElementById('step-out').textContent = stepVal + (stepMode === 'fixed' ? 'x' : '%');
+
+  const { N, eps, fls } = stepMode === 'fixed'
+    ? computeSetFixed(fratio, stepVal, epMin, epMax, flength)
+    : computeSet(fratio, stepVal, epMin, epMax);
 
   document.getElementById('out-count').textContent = N;
   document.getElementById('out-short').textContent = fls[0].toFixed(1) + 'mm';
@@ -439,69 +484,57 @@ function render() {
 
   let rows = '';
   fls.forEach((fl, i) => {
-    rows += '<tr><td>' + (i + 1) + '</td>' +
+    let row = '<tr><td>' + (i + 1) + '</td>' +
       '<td>' + fl.toFixed(1) + 'mm</td>' +
-      '<td>' + eps[i].toFixed(2) + 'mm</td></tr>';
+      '<td>' + eps[i].toFixed(2) + 'mm</td>';
+    if (flength) {
+      row += '<td>' + (flength / fl).toFixed(0) + 'x</td>';
+    }
+    row += '</tr>';
+    rows += row;
   });
 
   document.getElementById('table-wrap').innerHTML =
-    '<table><thead><tr><th>#</th><th>Focal length</th><th>Exit pupil</th></tr></thead>' +
+    '<table><thead><tr><th>#</th><th>Focal length</th><th>Exit pupil</th>' +
+    (flength ? '<th>Magnification</th>' : '') + '</tr></thead>' +
     '<tbody>' + rows + '</tbody></table>';
 
-  document.getElementById('ladder-title').textContent = 'Exit pupil (' + epMin.toFixed(1) + '\u2013' + epMax.toFixed(1) + 'mm)';
-  renderLadder(eps, epMin, epMax);
-  renderChart(fls);
-}
+  renderLineChart('fl-chart', fls);
 
-function renderLadder(eps, epMin, epMax) {
-  const W = 100, H = 300;
-  const padT = 14, padB = 14;
-  const plotH = H - padT - padB;
-  const x = 50;
-
-  const logMin = Math.log(epMin), logMax = Math.log(epMax);
-  // top = epMax, bottom = epMin
-  const yAt = ep => padT + plotH - ((Math.log(ep) - logMin) / (logMax - logMin)) * plotH;
-
-  let svg = '<line class="axis-line" x1="' + x + '" y1="' + padT + '" x2="' + x + '" y2="' + (padT + plotH) + '"></line>';
-
-  eps.forEach((ep, i) => {
-    const y = yAt(ep);
-    svg += '<line class="fl-tick" x1="' + (x - 5) + '" y1="' + y + '" x2="' + (x + 5) + '" y2="' + y + '"></line>';
-    svg += '<text class="fl-text" x="' + (x + 10) + '" y="' + (y + 3) + '">' + ep.toFixed(1) + '</text>';
-  });
-
-  for (let i = 0; i < eps.length - 1; i++) {
-    const yMid = (yAt(eps[i]) + yAt(eps[i + 1])) / 2;
-    const jumpPct = (eps[i + 1] / eps[i] - 1) * 100;
-    svg += '<text class="gap-text" x="' + (x - 10) + '" y="' + (yMid + 3) + '" text-anchor="end">' + jumpPct.toFixed(0) + '%</text>';
+  const magWrap = document.getElementById('mag-chart-wrap');
+  if (flength) {
+    magWrap.style.display = '';
+    renderLineChart('mag-chart', fls.map(fl => flength / fl), v => v.toFixed(0), v => v.toFixed(0) + 'x');
+  } else {
+    magWrap.style.display = 'none';
   }
-
-  document.getElementById('ladder-v').innerHTML = svg;
 }
 
-function renderChart(fls) {
+function renderLineChart(elementId, values, axisFmt, pointFmt) {
+  axisFmt = axisFmt || (v => v.toFixed(0));
+  pointFmt = pointFmt || (v => v.toFixed(1));
+
   const W = 560, H = 240;
   const padL = 40, padR = 20, padT = 20, padB = 30;
   const plotW = W - padL - padR;
   const plotH = H - padT - padB;
 
-  const minFL = 0;
-  const maxFL = Math.max(...fls) * 1.1;
-  const N = fls.length;
+  const minV = 0;
+  const maxV = Math.max(...values) * 1.1;
+  const N = values.length;
 
   const xAt = i => padL + (N === 1 ? 0 : (i / (N - 1)) * plotW);
-  const yAt = v => padT + plotH - ((v - minFL) / (maxFL - minFL)) * plotH;
+  const yAt = v => padT + plotH - ((v - minV) / (maxV - minV)) * plotH;
 
   let svg = '';
 
   // horizontal gridlines + y-axis labels (4 divisions)
   const divisions = 4;
   for (let d = 0; d <= divisions; d++) {
-    const val = (maxFL / divisions) * d;
+    const val = (maxV / divisions) * d;
     const y = yAt(val);
     svg += '<line class="grid-line" x1="' + padL + '" y1="' + y + '" x2="' + (W - padR) + '" y2="' + y + '"></line>';
-    svg += '<text class="axis-text" x="' + (padL - 8) + '" y="' + (y + 3) + '" text-anchor="end">' + val.toFixed(0) + '</text>';
+    svg += '<text class="axis-text" x="' + (padL - 8) + '" y="' + (y + 3) + '" text-anchor="end">' + axisFmt(val) + '</text>';
   }
 
   // x-axis line
@@ -509,24 +542,26 @@ function renderChart(fls) {
 
   // line path
   let path = '';
-  fls.forEach((fl, i) => {
-    const x = xAt(i), y = yAt(fl);
+  values.forEach((v, i) => {
+    const x = xAt(i), y = yAt(v);
     path += (i === 0 ? 'M' : 'L') + x + ' ' + y + ' ';
   });
   svg += '<path class="fl-line" d="' + path + '"></path>';
 
   // dots + point labels + x-axis eyepiece numbers
-  fls.forEach((fl, i) => {
-    const x = xAt(i), y = yAt(fl);
+  values.forEach((v, i) => {
+    const x = xAt(i), y = yAt(v);
+    const labelY = (y - 10 < padT + 8) ? y + 16 : y - 10;
     svg += '<circle class="fl-dot" cx="' + x + '" cy="' + y + '" r="3.5"></circle>';
-    svg += '<text class="point-text" x="' + x + '" y="' + (y - 10) + '" text-anchor="middle">' + fl.toFixed(1) + '</text>';
+    svg += '<text class="point-text" x="' + x + '" y="' + labelY + '" text-anchor="middle">' + pointFmt(v) + '</text>';
     svg += '<text class="axis-text" x="' + x + '" y="' + (padT + plotH + 16) + '" text-anchor="middle">' + (i + 1) + '</text>';
   });
 
-  document.getElementById('fl-chart').innerHTML = svg;
+  document.getElementById(elementId).innerHTML = svg;
 }
 
 document.getElementById('fratio').addEventListener('input', render);
+document.getElementById('flength').addEventListener('input', render);
 document.getElementById('step').addEventListener('input', render);
 document.getElementById('epmin').addEventListener('input', render);
 document.getElementById('epmax').addEventListener('input', render);
@@ -534,6 +569,13 @@ document.getElementById('advanced-toggle').addEventListener('click', function ()
   const panel = document.getElementById('advanced-panel');
   const isOpen = panel.classList.toggle('open');
   this.textContent = isOpen ? 'Hide exit pupil range' : 'Edit exit pupil range';
+});
+document.querySelectorAll('.step-mode-btn').forEach(btn => {
+  btn.addEventListener('click', function () {
+    if (this.disabled) return;
+    stepMode = this.dataset.mode;
+    render();
+  });
 });
 render();
 </script>
