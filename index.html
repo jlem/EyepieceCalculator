@@ -363,9 +363,6 @@
   tbody td:first-child {
     color: var(--text-secondary);
   }
-  tbody td:last-child {
-    color: var(--text-secondary);
-  }
   .chart-label {
     font-size: 13px;
     color: var(--text);
@@ -2154,21 +2151,27 @@ function render() {
 
   let rows = '';
   eyepieces.forEach((item, i) => {
-    let brightnessChangeText = '—';
+    let brightnessChangeText = '';
     if (i > 0) {
       const prevEp = eyepieces[i - 1].ep;
       const currEp = item.ep;
       const brightnessRatio = (currEp * currEp) / (prevEp * prevEp);
       const brightnessChangePct = (brightnessRatio - 1) * 100;
-      brightnessChangeText = (brightnessChangePct >= 0 ? '+' : '') + brightnessChangePct.toFixed(0) + '%';
+      brightnessChangeText = ' <span class="text-muted">(' + (brightnessChangePct >= 0 ? '+' : '') + brightnessChangePct.toFixed(0) + '%)</span>';
+    } else {
+      brightnessChangeText = ' <span class="text-muted">(—)</span>';
     }
 
-    let magChangeText = '—';
-    if (flength && i > 0) {
-      const prevMag = eyepieces[i - 1].mag;
-      const currMag = item.mag;
-      const magDiff = currMag - prevMag;
-      magChangeText = (magDiff >= 0 ? '+' : '') + magDiff.toFixed(0) + 'x';
+    let magChangeText = '';
+    if (flength) {
+      if (i > 0) {
+        const prevMag = eyepieces[i - 1].mag;
+        const currMag = item.mag;
+        const magDiff = currMag - prevMag;
+        magChangeText = ' <span class="text-muted">(' + (magDiff >= 0 ? '+' : '') + magDiff.toFixed(0) + 'x)</span>';
+      } else {
+        magChangeText = ' <span class="text-muted">(—)</span>';
+      }
     }
 
     const isWarn = item.ep > personalEpLimit;
@@ -2176,11 +2179,9 @@ function render() {
 
     let row = '<tr' + (isWarn ? ' class="row-warn"' : '') + '><td>' + item.originalIndex + '</td>' +
       '<td>' + item.fl.toFixed(1) + 'mm</td>' +
-      '<td>' + warnIconHtml + item.ep.toFixed(2) + 'mm</td>' +
-      '<td class="text-muted">' + brightnessChangeText + '</td>';
+      '<td>' + warnIconHtml + item.ep.toFixed(2) + 'mm' + brightnessChangeText + '</td>';
     if (flength) {
-      row += '<td>' + item.mag.toFixed(0) + 'x</td>' +
-             '<td class="text-muted">' + magChangeText + '</td>';
+      row += '<td>' + item.mag.toFixed(0) + 'x' + magChangeText + '</td>';
     }
     row += '</tr>';
     rows += row;
@@ -2196,18 +2197,16 @@ function render() {
   document.getElementById('table-wrap').innerHTML =
     '<table>' +
     '<colgroup>' +
-      '<col style="width: 8%;">' +
-      '<col style="width: ' + (flength ? '20%' : '30%') + ';">' +
-      '<col style="width: ' + (flength ? '16%' : '30%') + ';">' +
-      '<col style="width: ' + (flength ? '16%' : '32%') + ';">' +
-      (flength ? '<col style="width: 24%;"><col style="width: 16%;">' : '') +
+      '<col style="width: 10%;">' +
+      '<col style="width: ' + (flength ? '30%' : '45%') + ';">' +
+      '<col style="width: ' + (flength ? '30%' : '45%') + ';">' +
+      (flength ? '<col style="width: 30%;">' : '') +
     '</colgroup>' +
     '<thead><tr>' +
       '<th>#</th>' +
       getHeaderHtml('fl', 'Focal length') +
       '<th>Exit pupil</th>' +
-      '<th class="text-muted">Δ Brightness</th>' +
-      (flength ? '<th>Magnification</th><th class="text-muted">Δ Mag</th>' : '') +
+      (flength ? '<th>Magnification</th>' : '') +
     '</tr></thead>' +
     '<tbody>' + rows + '</tbody></table>';
 
