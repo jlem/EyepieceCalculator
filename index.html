@@ -218,6 +218,42 @@
     margin-bottom: 16px;
     width: 100%;
   }
+  .enforce-limit-col {
+    display: flex;
+    flex-direction: column;
+  }
+  .checkbox-wrap {
+    display: flex;
+    align-items: center;
+    height: 42px;
+  }
+  .checkbox-wrap input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .limit-enforced-overlay {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--surface);
+    color: var(--text-warn);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 10;
+  }
+  .limit-enforced-overlay.show {
+    opacity: 1;
+    transition: none;
+  }
   .pupil-range-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -995,7 +1031,13 @@
               <label for="personal-ep-limit">Personal exit pupil limit (mm)</label>
               <input type="number" id="personal-ep-limit" value="7" min="0.1" max="25" step="0.1">
             </div>
-            <div></div>
+            <div class="enforce-limit-col">
+              <label style="user-select: none;">&nbsp;</label>
+              <div class="checkbox-wrap">
+                <input type="checkbox" id="enforce-personal-limit">
+                <label for="enforce-personal-limit" style="cursor: pointer; user-select: none; margin-left: 8px; margin-bottom: 0; display: inline-block;">Enforce limit</label>
+              </div>
+            </div>
           </div>
           <div class="pupil-range-row">
             <div>
@@ -1016,6 +1058,7 @@
               </div>
               <div class="input-warning-wrapper" id="epmax-warning-wrapper">
                 <input type="number" id="epmax" value="7" min="0.1" max="250" step="0.5">
+                <div class="limit-enforced-overlay" id="limit-enforced-overlay">Limit enforced</div>
                 <div class="input-warning-icon" id="epmax-warning-icon" title="The entered or computed exit pupil is greater than your personal exit pupil limit">
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="var(--text-warn)">
                     <title>The entered or computed exit pupil is greater than your personal exit pupil limit</title>
@@ -1284,9 +1327,12 @@ let cachedChartHeight = 240;
 let lastRenderedFls = null;
 let lastRenderedEps = null;
 let lastRenderedFlength = null;
+let lastRenderedPersonalLimit = null;
+let lastRenderedEnforce = null;
 
 let isApplyingHash = false;
 let shouldUpdateHash = !!window.location.hash;
+let enforceTimeoutId = null;
 
 let minLimitMode = 'ep';
 let maxLimitMode = 'ep';
@@ -1316,6 +1362,8 @@ function serializeStateToHash() {
   if (maxVal) params.set('max', maxVal);
   const peplVal = document.getElementById('personal-ep-limit').value;
   if (peplVal) params.set('pepl', peplVal);
+  const enforceLimit = document.getElementById('enforce-personal-limit').checked;
+  if (enforceLimit) params.set('enf', '1');
 
   // Tab type
   params.set('type', stepModeType);
@@ -1400,9 +1448,11 @@ function applyStateFromHash() {
   const minVal = params.get('min');
   const maxVal = params.get('max');
   const peplVal = params.get('pepl');
+  const enfVal = params.get('enf');
   document.getElementById('epmin').value = (minVal && !isNaN(parseFloat(minVal))) ? parseFloat(minVal) : (minLimitMode === 'fl' ? 2.5 : 0.5);
   document.getElementById('epmax').value = (maxVal && !isNaN(parseFloat(maxVal))) ? parseFloat(maxVal) : (maxLimitMode === 'fl' ? 35.0 : 7.0);
   document.getElementById('personal-ep-limit').value = (peplVal && !isNaN(parseFloat(peplVal))) ? parseFloat(peplVal) : '7';
+  document.getElementById('enforce-personal-limit').checked = (enfVal === '1');
 
   document.getElementById('epmin').step = minLimitMode === 'fl' ? '0.5' : '0.1';
   document.getElementById('epmax').step = maxLimitMode === 'fl' ? '1' : '0.5';
@@ -1532,6 +1582,8 @@ function applyStateFromHash() {
   lastRenderedFls = null;
   lastRenderedEps = null;
   lastRenderedFlength = null;
+  lastRenderedPersonalLimit = null;
+  lastRenderedEnforce = null;
 
   updateCachedDimensions();
   render();
@@ -1772,6 +1824,18 @@ function updateStepModeUI(hasFlength) {
   }
 }
 
+function showLimitEnforcedOverlay() {
+  const overlay = document.getElementById('limit-enforced-overlay');
+  if (!overlay) return;
+  overlay.classList.add('show');
+  if (enforceTimeoutId) {
+    clearTimeout(enforceTimeoutId);
+  }
+  enforceTimeoutId = setTimeout(() => {
+    overlay.classList.remove('show');
+  }, 2000);
+}
+
 function render() {
   const fratio = parseFloat(document.getElementById('fratio').value) || 5;
   const inputValRaw = document.getElementById('fl-ap-input').value;
@@ -1795,12 +1859,26 @@ function render() {
     epMin = epMin / fratio;
   }
   
+  const enforceLimit = document.getElementById('enforce-personal-limit').checked;
+  const personalEpLimit = parseFloat(document.getElementById('personal-ep-limit').value) || 7.0;
+  
   let epMax = parseFloat(document.getElementById('epmax').value) || 7.0;
   if (maxLimitMode === 'fl') {
     epMax = epMax / fratio;
   }
 
-  const personalEpLimit = parseFloat(document.getElementById('personal-ep-limit').value) || 7.0;
+  if (enforceLimit && epMax > personalEpLimit) {
+    const epmaxInput = document.getElementById('epmax');
+    if (maxLimitMode === 'fl') {
+      epmaxInput.value = parseFloat((personalEpLimit * fratio).toFixed(1));
+      epMax = personalEpLimit;
+    } else {
+      epmaxInput.value = personalEpLimit;
+      epMax = personalEpLimit;
+    }
+    showLimitEnforcedOverlay();
+  }
+
   const hasEpMaxWarning = epMax > personalEpLimit;
   
   const epmaxWarningWrapper = document.getElementById('epmax-warning-wrapper');
@@ -1903,16 +1981,20 @@ function render() {
   const flsChanged = !arraysEqual(fls, lastRenderedFls);
   const epsChanged = !arraysEqual(eps, lastRenderedEps);
   const flengthChanged = flength !== lastRenderedFlength;
+  const personalLimitChanged = personalEpLimit !== lastRenderedPersonalLimit;
+  const enforceChanged = enforceLimit !== lastRenderedEnforce;
   
   updateHashFromState();
   
-  if (!flsChanged && !epsChanged && !flengthChanged) {
+  if (!flsChanged && !epsChanged && !flengthChanged && !personalLimitChanged && !enforceChanged) {
     return;
   }
   
   lastRenderedFls = fls;
   lastRenderedEps = eps;
   lastRenderedFlength = flength;
+  lastRenderedPersonalLimit = personalEpLimit;
+  lastRenderedEnforce = enforceLimit;
 
   // Update cheap output values immediately
   document.getElementById('out-count').textContent = N;
@@ -2208,6 +2290,7 @@ document.getElementById('step').addEventListener('input', render);
 document.getElementById('epmin').addEventListener('input', render);
 document.getElementById('epmax').addEventListener('input', render);
 document.getElementById('personal-ep-limit').addEventListener('input', render);
+document.getElementById('enforce-personal-limit').addEventListener('change', render);
 
 const minModeButtons = document.querySelectorAll('#min-mode-toggle .segment-btn');
 minModeButtons.forEach(btn => {
@@ -2448,6 +2531,7 @@ function resetInputsToDefault() {
   document.getElementById('epmin').value = '0.5';
   document.getElementById('epmax').value = '7';
   document.getElementById('personal-ep-limit').value = '7';
+  document.getElementById('enforce-personal-limit').checked = false;
   document.getElementById('step').value = '40';
   document.getElementById('adv-trans-slider').value = '2.0';
   document.getElementById('adv-step-low').value = '40';
@@ -2513,6 +2597,8 @@ function resetInputsToDefault() {
   lastRenderedFls = null;
   lastRenderedEps = null;
   lastRenderedFlength = null;
+  lastRenderedPersonalLimit = null;
+  lastRenderedEnforce = null;
   
   lastEpMin = 0.5;
   lastEpMax = 7.0;
