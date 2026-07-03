@@ -516,6 +516,35 @@
   .hide {
     display: none !important;
   }
+  .chart-container.placeholder-active {
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    background: #151820; /* 10% darker background */
+    box-shadow: none;
+  }
+  .placeholder-text-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 240px;
+    box-sizing: border-box;
+    padding: 20px;
+  }
+  .placeholder-text {
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .placeholder-link {
+    color: #ffe082;
+    text-decoration: underline;
+    cursor: pointer;
+    transition: filter 0.2s;
+  }
+  .placeholder-link:hover {
+    filter: brightness(1.2);
+  }
   .input-unit-row {
     display: flex;
     gap: 8px;
@@ -536,10 +565,48 @@
   }
   .advanced-step-container {
     margin-top: 1rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0;
     display: flex;
     flex-direction: column;
     grid-column: 1 / -1; /* spans full left column */
+  }
+  .adv-field-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .adv-field-row:last-child {
+    margin-bottom: 0;
+  }
+  .adv-field-row label {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 600;
+    min-width: 60px;
+    flex-shrink: 0;
+  }
+  .adv-field-row.strategy-row label {
+    min-width: 90px;
+  }
+  .adv-field-row select {
+    flex: 1;
+    min-width: 0;
+  }
+  .adv-field-row input[type="range"] {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    background: rgba(255, 255, 255, 0.7);
+  }
+  .adv-field-row .step-out {
+    min-width: 48px;
+    text-align: right;
+    font-size: 11px;
+    color: #ffe082;
+    font-weight: 700;
+    flex-shrink: 0;
   }
   .adv-slider-section {
     position: relative;
@@ -803,7 +870,7 @@
             </div>
           </div>
           <div class="input-unit-row">
-            <input type="text" id="fl-ap-input" placeholder="e.g. 1000 mm (optional)" inputmode="decimal">
+            <input type="text" id="fl-ap-input" value="1000" placeholder="e.g. 1000 mm (optional)" inputmode="decimal">
             <div class="segmented-control hide" id="unit-toggle">
               <button type="button" class="segment-btn active" data-unit="mm">mm</button>
               <button type="button" class="segment-btn" data-unit="in">in</button>
@@ -811,8 +878,8 @@
           </div>
         </div>
         <div id="simple-step-controls">
-          <div class="step-label-row">
-            <label for="step" title="This value may differ from the computed values because rounding is necessary to get the results to fit within the prescribed exit pupil limits.">Approx step size</label>
+          <div class="adv-field-row strategy-row">
+            <label for="step-mode-select">Step Strategy</label>
             <select id="step-mode-select" class="step-mode-select">
               <option value="percent">Percent</option>
               <option value="brightness">Percent brightness</option>
@@ -820,7 +887,8 @@
               <option value="pupil">Fixed exit pupil</option>
             </select>
           </div>
-          <div class="step-row">
+          <div class="adv-field-row">
+            <label for="step" title="This value may differ from the computed values because rounding is necessary to get the results to fit within the prescribed exit pupil limits.">Step size</label>
             <input type="range" id="step" min="20" max="60" value="40" step="1">
             <span class="step-out" id="step-out">40%</span>
           </div>
@@ -851,8 +919,8 @@
 
       <!-- SVG Funnel Connectors -->
       <svg class="funnel-svg" viewBox="0 0 100 100" preserveAspectRatio="none" style="display: block; width: 100%; height: 24px; margin: 0 0 -1px; pointer-events: none; z-index: 1;">
-        <path id="funnel-low" d="M 0,0 L 25,0 C 25,50 48.5,50 48.5,100 L 0,100 Z" fill="#242a35" />
-        <path id="funnel-high" d="M 25,0 L 100,0 L 100,100 L 51.5,100 C 51.5,50 25,50 25,0 Z" fill="#2d3441" />
+        <path id="funnel-low" d="M 0,0 L 24.67,0 C 24.67,40 48.67,60 48.67,100 L 0,100 Z" fill="#242a35" />
+        <path id="funnel-high" d="M 25.33,0 L 100,0 L 100,100 L 51.33,100 C 51.33,60 25.33,40 25.33,0 Z" fill="#2d3441" />
       </svg>
 
         <div class="adv-cards-grid">
@@ -860,9 +928,8 @@
           <div class="active-config-card" id="card-low">
             <div class="config-header">
               <h4 id="config-title-low">Low Range (0.5mm → 2.0mm)</h4>
-            </div>
-            <div class="config-fields-stacked">
-              <div>
+            </div>            <div class="config-fields-stacked">
+              <div class="adv-field-row strategy-row">
                 <label for="adv-strategy-low">Step Strategy</label>
                 <select id="adv-strategy-low" class="step-mode-select">
                   <option value="percent">Percent</option>
@@ -871,14 +938,10 @@
                   <option value="pupil">Fixed exit pupil</option>
                 </select>
               </div>
-              <div style="margin-top: 12px;">
-                <div class="step-label-row">
-                  <label for="adv-step-low">Step Size</label>
-                  <span class="step-out" id="adv-step-out-low">0.50mm</span>
-                </div>
-                <div class="step-row" style="margin-top: 4px;">
-                  <input type="range" id="adv-step-low" min="20" max="60" value="40" step="1" style="width: 100%;">
-                </div>
+              <div class="adv-field-row">
+                <label for="adv-step-low">Step Size</label>
+                <input type="range" id="adv-step-low" min="20" max="60" value="40" step="1">
+                <span class="step-out" id="adv-step-out-low">0.50mm</span>
               </div>
             </div>
           </div>
@@ -889,7 +952,7 @@
               <h4 id="config-title-high">High Range (2.0mm → 7.0mm)</h4>
             </div>
             <div class="config-fields-stacked">
-              <div>
+              <div class="adv-field-row strategy-row">
                 <label for="adv-strategy-high">Step Strategy</label>
                 <select id="adv-strategy-high" class="step-mode-select">
                   <option value="percent">Percent</option>
@@ -898,14 +961,10 @@
                   <option value="pupil">Fixed exit pupil</option>
                 </select>
               </div>
-              <div style="margin-top: 12px;">
-                <div class="step-label-row">
-                  <label for="adv-step-high">Step Size</label>
-                  <span class="step-out" id="adv-step-out-high">40%</span>
-                </div>
-                <div class="step-row" style="margin-top: 4px;">
-                  <input type="range" id="adv-step-high" min="20" max="60" value="40" step="1" style="width: 100%;">
-                </div>
+              <div class="adv-field-row">
+                <label for="adv-step-high">Step Size</label>
+                <input type="range" id="adv-step-high" min="20" max="60" value="40" step="1">
+                <span class="step-out" id="adv-step-out-high">40%</span>
               </div>
             </div>
           </div>
@@ -1016,6 +1075,11 @@
         <div id="mag-chart-wrap" class="chart-container">
           <p class="chart-label">Magnification</p>
           <svg id="mag-chart" class="line-chart" viewBox="0 0 560 240"></svg>
+          <div id="mag-chart-placeholder" class="placeholder-text-wrap hide">
+            <span class="placeholder-text">
+              <a href="#" id="focus-fl-link" class="placeholder-link">Enter a focal length or aperture</a> to calculate magnifications and show this graph
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -1031,12 +1095,50 @@ const stepValues = { percent: 40, fixed: 40, brightness: 50, pupil: 0.50 };
 
 let stepModeType = 'simple'; // 'simple' or 'advanced'
 let epTrans = 2.0;           // transition point
-let lowStrategy = 'pupil';   // low range strategy
-let lowStep = 0.50;          // low step size
-let highStrategy = 'percent';// high range strategy
-let highStep = 40;           // high step size
+let lowStrategy = 'percent'; // default if no flength
+let lowStep = 40;
+let lowStrategyUserModified = false;
+let highStrategy = 'pupil';  // Fixed Exit Pupil
+let highStep = 1.00;         // 1.00mm
 let lastEpMin = 0.5;
 let lastEpMax = 7.0;
+let cachedContainerWidth = 600;
+let cachedChartWidth = 560;
+let cachedChartHeight = 240;
+
+let lastRenderedFls = null;
+let lastRenderedEps = null;
+let lastRenderedFlength = null;
+
+function arraysEqual(a, b) {
+  if (!a || !b) return false;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+function updateCachedDimensions() {
+  const container = document.querySelector('.adv-cards-grid');
+  if (container) {
+    cachedContainerWidth = container.getBoundingClientRect().width;
+  }
+  
+  const chart = document.querySelector('.line-chart');
+  if (chart && chart.parentNode) {
+    const rect = chart.parentNode.getBoundingClientRect();
+    const padding = 32;
+    const labelEl = chart.parentNode.querySelector('.chart-label');
+    const labelH = labelEl ? labelEl.offsetHeight : 20;
+    
+    const parentW = rect.width - padding;
+    const parentH = rect.height - padding - labelH - 12;
+    
+    cachedChartWidth = parentW > 0 ? parentW : 560;
+    cachedChartHeight = parentH > 0 ? parentH : 240;
+  }
+}
 
 function getStrategyLabel(strategy, step) {
   const names = {
@@ -1116,6 +1218,7 @@ function updateActiveSegmentUI() {
   
   syncAdvancedSliderBounds('low', lowStrategy, lowStep);
   syncAdvancedSliderBounds('high', highStrategy, highStep);
+  updateAdvancedSliderVisuals();
 }
 
 function updateFunnels(wLow) {
@@ -1123,15 +1226,23 @@ function updateFunnels(wLow) {
   const funnelHigh = document.getElementById('funnel-high');
   if (!funnelLow || !funnelHigh) return;
   
-  const container = document.querySelector('.adv-cards-grid');
-  const containerWidth = container ? container.getBoundingClientRect().width : 600;
+  const containerWidth = cachedContainerWidth;
+  
+  // Bottom gap is 16px
   const gapPct = containerWidth > 0 ? (16 / containerWidth) * 100 : 2.67;
   const halfGap = gapPct / 2;
   const lowEnd = 50 - halfGap;
   const highStart = 50 + halfGap;
   
-  funnelLow.setAttribute('d', `M 0,0 L ${wLow},0 C ${wLow},50 ${lowEnd},50 ${lowEnd},100 L 0,100 Z`);
-  funnelHigh.setAttribute('d', `M ${wLow},0 L 100,0 L 100,100 L ${highStart},100 C ${highStart},50 ${wLow},50 ${wLow},0 Z`);
+  // Top gap is 4px (matches width of central drag bar)
+  const topGapPct = containerWidth > 0 ? (4 / containerWidth) * 100 : 0.67;
+  const topHalfGap = topGapPct / 2;
+  
+  const tLow = Math.max(0, wLow - topHalfGap);
+  const tHigh = Math.min(100, wLow + topHalfGap);
+  
+  funnelLow.setAttribute('d', `M 0,0 L ${tLow},0 C ${tLow},40 ${lowEnd},60 ${lowEnd},100 L 0,100 Z`);
+  funnelHigh.setAttribute('d', `M ${tHigh},0 L 100,0 L 100,100 L ${highStart},100 C ${highStart},60 ${tHigh},40 ${tHigh},0 Z`);
 }
 
 function updateAdvancedSliderVisuals() {
@@ -1292,12 +1403,23 @@ function render() {
     }
   }
 
-  // Fallback check for advanced mode fixed mag if flength is missing
+  // Fallback check and default adjustment for advanced mode
   if (stepModeType === 'advanced') {
-    if (lowStrategy === 'fixed' && !flength) {
-      lowStrategy = 'percent';
-      lowStep = 40;
+    if (!lowStrategyUserModified) {
+      if (flength) {
+        lowStrategy = 'fixed';
+        lowStep = 50;
+      } else {
+        lowStrategy = 'percent';
+        lowStep = 40;
+      }
+    } else {
+      if (lowStrategy === 'fixed' && !flength) {
+        lowStrategy = 'percent';
+        lowStep = 40;
+      }
     }
+    
     if (highStrategy === 'fixed' && !flength) {
       highStrategy = 'percent';
       highStep = 40;
@@ -1316,7 +1438,6 @@ function render() {
       unit = 'x';
     } else if (stepMode === 'pupil') {
       unit = 'mm';
-
     }
     document.getElementById('step-out').textContent = (stepMode === 'pupil' ? stepVal.toFixed(2) : stepVal) + unit;
 
@@ -1326,8 +1447,7 @@ function render() {
         ? computeSetBrightness(fratio, stepVal, epMin, epMax)
         : stepMode === 'pupil'
           ? computeSetPupil(fratio, stepVal, epMin, epMax)
-
-            : computeSet(fratio, stepVal, epMin, epMax);
+          : computeSet(fratio, stepVal, epMin, epMax);
     N = res.N;
     eps = res.eps;
     fls = res.fls;
@@ -1342,6 +1462,19 @@ function render() {
     shadingStartIdx = lowRes.eps.length - 1;
   }
 
+  const flsChanged = !arraysEqual(fls, lastRenderedFls);
+  const epsChanged = !arraysEqual(eps, lastRenderedEps);
+  const flengthChanged = flength !== lastRenderedFlength;
+  
+  if (!flsChanged && !epsChanged && !flengthChanged) {
+    return;
+  }
+  
+  lastRenderedFls = fls;
+  lastRenderedEps = eps;
+  lastRenderedFlength = flength;
+
+  // Update cheap output values immediately
   document.getElementById('out-count').textContent = N;
   document.getElementById('out-short').textContent = fls[0].toFixed(1) + 'mm';
   document.getElementById('out-long').textContent = fls[fls.length - 1].toFixed(1) + 'mm';
@@ -1412,11 +1545,17 @@ function render() {
   }
 
   const magWrap = document.getElementById('mag-chart-wrap');
+  const magChart = document.getElementById('mag-chart');
+  const magPlaceholder = document.getElementById('mag-chart-placeholder');
   if (flength) {
-    magWrap.style.display = '';
+    magWrap.classList.remove('placeholder-active');
+    magChart.classList.remove('hide');
+    magPlaceholder.classList.add('hide');
     renderLineChart('mag-chart', fls.map(fl => flength / fl), v => v.toFixed(0), v => v.toFixed(0) + 'x', 'mag', null, shadingStartIdx);
   } else {
-    magWrap.style.display = 'none';
+    magWrap.classList.add('placeholder-active');
+    magChart.classList.add('hide');
+    magPlaceholder.classList.remove('hide');
   }
 }
 
@@ -1428,16 +1567,8 @@ function renderLineChart(elementId, values, axisFmt, pointFmt, lineClass, xLabel
   const element = document.getElementById(elementId);
   if (!element) return;
 
-  const rect = element.parentNode.getBoundingClientRect();
-  const padding = 32;
-  const labelEl = element.parentNode.querySelector('.chart-label');
-  const labelH = labelEl ? labelEl.offsetHeight : 20;
-  
-  const parentW = rect.width - padding;
-  const parentH = rect.height - padding - labelH - 12;
-
-  const W = parentW > 0 ? parentW : 560;
-  const H = parentH > 0 ? parentH : 240;
+  const W = cachedChartWidth;
+  const H = cachedChartHeight;
 
   element.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
 
@@ -1500,7 +1631,7 @@ function renderLineChart(elementId, values, axisFmt, pointFmt, lineClass, xLabel
   element.innerHTML = svg;
 }
 
-document.getElementById('fratio').addEventListener('input', render);
+document.getElementById('fratio').addEventListener('input', () => render(true));
 let inputMode = 'fl';
 let apertureUnit = 'mm';
 
@@ -1571,7 +1702,7 @@ unitButtons.forEach(btn => {
 flApInput.addEventListener('input', () => {
   const rawVal = flApInput.value.trim();
   if (!rawVal) {
-    render();
+    render(true);
     return;
   }
 
@@ -1627,9 +1758,47 @@ flApInput.addEventListener('input', () => {
     }
   }
 
-  render();
+  render(true);
 });
 document.getElementById('step').addEventListener('input', render);
+
+const simpleSlider = document.getElementById('step');
+let simplePlaceholder = null;
+
+simpleSlider.addEventListener('pointerdown', (e) => {
+  const rect = simpleSlider.getBoundingClientRect();
+  
+  simplePlaceholder = document.createElement('div');
+  simplePlaceholder.style.width = rect.width + 'px';
+  simplePlaceholder.style.height = rect.height + 'px';
+  simplePlaceholder.style.flex = '1';
+  simplePlaceholder.style.minWidth = '0';
+  
+  simpleSlider.parentNode.insertBefore(simplePlaceholder, simpleSlider);
+  
+  simpleSlider.style.position = 'fixed';
+  simpleSlider.style.left = rect.left + 'px';
+  simpleSlider.style.top = rect.top + 'px';
+  simpleSlider.style.width = rect.width + 'px';
+  simpleSlider.style.zIndex = '1000';
+});
+
+const releaseSimpleSlider = () => {
+  if (simplePlaceholder) {
+    if (simplePlaceholder.parentNode) {
+      simplePlaceholder.parentNode.removeChild(simplePlaceholder);
+    }
+    simplePlaceholder = null;
+  }
+  simpleSlider.style.position = '';
+  simpleSlider.style.left = '';
+  simpleSlider.style.top = '';
+  simpleSlider.style.width = '';
+  simpleSlider.style.zIndex = '';
+};
+
+window.addEventListener('pointerup', releaseSimpleSlider);
+window.addEventListener('pointercancel', releaseSimpleSlider);
 document.getElementById('epmin').addEventListener('input', render);
 document.getElementById('epmax').addEventListener('input', render);
 document.getElementById('desc-range-link').addEventListener('click', function (e) {
@@ -1638,6 +1807,14 @@ document.getElementById('desc-range-link').addEventListener('click', function (e
   const isOpen = panel.classList.toggle('open');
   if (isOpen) {
     document.getElementById('epmin').focus();
+  }
+});
+document.getElementById('focus-fl-link').addEventListener('click', function (e) {
+  e.preventDefault();
+  const input = document.getElementById('fl-ap-input');
+  if (input) {
+    input.focus();
+    input.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 });
 document.getElementById('step-mode-select').addEventListener('change', function () {
@@ -1708,7 +1885,8 @@ document.getElementById('adv-trans-slider').addEventListener('input', function (
 
 document.getElementById('adv-strategy-low').addEventListener('change', function () {
   lowStrategy = this.value;
-  const defaultSteps = { percent: 40, fixed: 40, brightness: 50, pupil: 0.50 };
+  lowStrategyUserModified = true;
+  const defaultSteps = { percent: 40, fixed: 50, brightness: 50, pupil: 0.50 };
   lowStep = defaultSteps[lowStrategy];
   syncAdvancedSliderBounds('low', lowStrategy, lowStep);
   render();
@@ -1716,7 +1894,7 @@ document.getElementById('adv-strategy-low').addEventListener('change', function 
 
 document.getElementById('adv-strategy-high').addEventListener('change', function () {
   highStrategy = this.value;
-  const defaultSteps = { percent: 40, fixed: 40, brightness: 50, pupil: 0.50 };
+  const defaultSteps = { percent: 40, fixed: 50, brightness: 50, pupil: 1.00 };
   highStep = defaultSteps[highStrategy];
   syncAdvancedSliderBounds('high', highStrategy, highStep);
   render();
@@ -1724,6 +1902,7 @@ document.getElementById('adv-strategy-high').addEventListener('change', function
 
 document.getElementById('adv-step-low').addEventListener('input', function () {
   lowStep = parseFloat(this.value);
+  lowStrategyUserModified = true;
   updateAdvancedStepOutput('low', lowStrategy, lowStep);
   updateAdvancedSliderVisuals();
   render();
@@ -1738,8 +1917,12 @@ document.getElementById('adv-step-high').addEventListener('input', function () {
 let resizeTimeout;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimeout);
-  resizeTimeout = setTimeout(render, 50);
+  resizeTimeout = setTimeout(() => {
+    updateCachedDimensions();
+    render();
+  }, 50);
 });
+updateCachedDimensions();
 render();
 </script>
 </body>
