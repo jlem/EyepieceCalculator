@@ -949,15 +949,25 @@
           <button type="button" id="share-btn" class="share-btn">Share Setup</button>
         </div>
         <div class="pupil-range-row">
-        <div>
-          <label for="epmin">Min exit pupil (mm)</label>
-          <input type="number" id="epmin" value="0.5" min="0.1" max="5" step="0.1">
+          <div>
+            <div class="label-segmented-row">
+              <div class="segmented-control" id="min-mode-toggle">
+                <button type="button" class="segment-btn active" data-mode="ep">Min exit pupil</button>
+                <button type="button" class="segment-btn" data-mode="fl">Min eyepiece FL</button>
+              </div>
+            </div>
+            <input type="number" id="epmin" value="0.5" min="0.1" max="150" step="0.1">
+          </div>
+          <div>
+            <div class="label-segmented-row">
+              <div class="segmented-control" id="max-mode-toggle">
+                <button type="button" class="segment-btn active" data-mode="ep">Max exit pupil</button>
+                <button type="button" class="segment-btn" data-mode="fl">Max eyepiece FL</button>
+              </div>
+            </div>
+            <input type="number" id="epmax" value="7" min="0.1" max="250" step="0.5">
+          </div>
         </div>
-        <div>
-          <label for="epmax">Max exit pupil (mm)</label>
-          <input type="number" id="epmax" value="7" min="1" max="15" step="0.5">
-        </div>
-      </div>
 
       <div class="controls">
         <div>
@@ -1220,6 +1230,9 @@ let lastRenderedFlength = null;
 let isApplyingHash = false;
 let shouldUpdateHash = !!window.location.hash;
 
+let minLimitMode = 'ep';
+let maxLimitMode = 'ep';
+
 function serializeStateToHash() {
   const params = new URLSearchParams();
 
@@ -1236,7 +1249,9 @@ function serializeStateToHash() {
     params.set('unit', apertureUnit);
   }
 
-  // Exit pupil bounds
+  // Exit pupil / Eyepiece FL bounds modes and values
+  params.set('minmode', minLimitMode);
+  params.set('maxmode', maxLimitMode);
   const minVal = document.getElementById('epmin').value;
   const maxVal = document.getElementById('epmax').value;
   if (minVal) params.set('min', minVal);
@@ -1302,11 +1317,33 @@ function applyStateFromHash() {
   const fratioInput = document.getElementById('fratio');
   fratioInput.value = parseFloat(fr);
 
-  // Apply exit pupil ranges if present, otherwise fallback to defaults (0.5 and 7.0)
+  // Apply exit pupil / eyepiece FL bounds modes and values
+  const minModeParam = params.get('minmode') || 'ep';
+  minLimitMode = minModeParam === 'fl' ? 'fl' : 'ep';
+  
+  const maxModeParam = params.get('maxmode') || 'ep';
+  maxLimitMode = maxModeParam === 'fl' ? 'fl' : 'ep';
+
+  // Synchronize segmented controls classes for min and max bounds modes
+  const minModeButtons = document.querySelectorAll('#min-mode-toggle .segment-btn');
+  minModeButtons.forEach(btn => {
+    if (btn.dataset.mode === minLimitMode) btn.classList.add('active');
+    else btn.classList.remove('active');
+  });
+
+  const maxModeButtons = document.querySelectorAll('#max-mode-toggle .segment-btn');
+  maxModeButtons.forEach(btn => {
+    if (btn.dataset.mode === maxLimitMode) btn.classList.add('active');
+    else btn.classList.remove('active');
+  });
+
   const minVal = params.get('min');
   const maxVal = params.get('max');
-  document.getElementById('epmin').value = (minVal && !isNaN(parseFloat(minVal))) ? parseFloat(minVal) : 0.5;
-  document.getElementById('epmax').value = (maxVal && !isNaN(parseFloat(maxVal))) ? parseFloat(maxVal) : 7.0;
+  document.getElementById('epmin').value = (minVal && !isNaN(parseFloat(minVal))) ? parseFloat(minVal) : (minLimitMode === 'fl' ? 2.5 : 0.5);
+  document.getElementById('epmax').value = (maxVal && !isNaN(parseFloat(maxVal))) ? parseFloat(maxVal) : (maxLimitMode === 'fl' ? 35.0 : 7.0);
+
+  document.getElementById('epmin').step = minLimitMode === 'fl' ? '0.5' : '0.1';
+  document.getElementById('epmax').step = maxLimitMode === 'fl' ? '1' : '0.5';
 
   // Apply mode (defaulting to fl if missing)
   const mode = params.get('mode') || 'fl';
@@ -1413,17 +1450,20 @@ function applyStateFromHash() {
   const simpleControls = document.getElementById('simple-step-controls');
   const advControls = document.getElementById('advanced-step-container');
   const controlsWrap = document.querySelector('.controls');
+  const pupilRangeRow = document.querySelector('.pupil-range-row');
 
   if (stepModeType === 'advanced') {
     simpleControls.classList.add('hide');
     controlsWrap.classList.add('controls-advanced');
     advControls.classList.remove('hide');
+    pupilRangeRow.classList.add('open');
     updateAdvancedSliderVisuals();
     updateActiveSegmentUI();
   } else {
     simpleControls.classList.remove('hide');
     controlsWrap.classList.remove('controls-advanced');
     advControls.classList.add('hide');
+    pupilRangeRow.classList.remove('open');
   }
 
   // Clear cached renders to force drawing the graphs and calculations
@@ -1494,12 +1534,25 @@ function updateAdvancedStepOutput(side, strategy, value) {
   out.textContent = (strategy === 'pupil' ? value.toFixed(2) : value) + suffix;
 }
 
-function updateActiveSegmentUI() {
-  const epMin = parseFloat(document.getElementById('epmin').value) || 0.5;
-  const epMax = parseFloat(document.getElementById('epmax').value) || 7.0;
+function updateActiveSegmentUI(transVal) {
+  const fratio = parseFloat(document.getElementById('fratio').value) || 5;
   
-  document.getElementById('config-title-low').textContent = `Low Range (${epMin.toFixed(1)}mm → ${epTrans.toFixed(1)}mm)`;
-  document.getElementById('config-title-high').textContent = `High Range (${epTrans.toFixed(1)}mm → ${epMax.toFixed(1)}mm)`;
+  let epMin = parseFloat(document.getElementById('epmin').value) || 0.5;
+  if (minLimitMode === 'fl') {
+    epMin = epMin / fratio;
+  }
+  
+  let epMax = parseFloat(document.getElementById('epmax').value) || 7.0;
+  if (maxLimitMode === 'fl') {
+    epMax = epMax / fratio;
+  }
+
+  if (transVal === undefined) {
+    transVal = Math.round(Math.min(Math.max(epTrans, epMin + 0.1), epMax - 0.1) * 10) / 10;
+  }
+  
+  document.getElementById('config-title-low').textContent = `Low Range (${epMin.toFixed(1)}mm → ${transVal.toFixed(1)}mm)`;
+  document.getElementById('config-title-high').textContent = `High Range (${transVal.toFixed(1)}mm → ${epMax.toFixed(1)}mm)`;
   
   const inputValRaw = document.getElementById('fl-ap-input').value;
   const hasFlength = !!inputValRaw && !isNaN(parseFloat(inputValRaw));
@@ -1528,24 +1581,37 @@ function updateActiveSegmentUI() {
   updateAdvancedSliderVisuals();
 }
 
-function updateAdvancedSliderVisuals() {
-  const epMin = parseFloat(document.getElementById('epmin').value) || 0.5;
-  const epMax = parseFloat(document.getElementById('epmax').value) || 7.0;
+function updateAdvancedSliderVisuals(transVal) {
+  const fratio = parseFloat(document.getElementById('fratio').value) || 5;
+  
+  let epMin = parseFloat(document.getElementById('epmin').value) || 0.5;
+  if (minLimitMode === 'fl') {
+    epMin = epMin / fratio;
+  }
+  
+  let epMax = parseFloat(document.getElementById('epmax').value) || 7.0;
+  if (maxLimitMode === 'fl') {
+    epMax = epMax / fratio;
+  }
+
+  if (transVal === undefined) {
+    transVal = Math.round(Math.min(Math.max(epTrans, epMin + 0.1), epMax - 0.1) * 10) / 10;
+  }
   
   const slider = document.getElementById('adv-trans-slider');
   slider.min = (epMin + 0.1).toFixed(1);
   slider.max = (epMax - 0.1).toFixed(1);
-  slider.value = epTrans.toFixed(1);
+  slider.value = transVal.toFixed(1);
   
   const totalRange = epMax - epMin;
-  const lowWidth = totalRange > 0 ? ((epTrans - epMin) / totalRange) * 100 : 50;
+  const lowWidth = totalRange > 0 ? ((transVal - epMin) / totalRange) * 100 : 50;
   const highWidth = 100 - lowWidth;
   
   document.getElementById('segment-low').style.width = lowWidth + '%';
   document.getElementById('segment-high').style.width = highWidth + '%';
   document.getElementById('adv-trans-bubble-container').style.left = lowWidth + '%';
   
-  document.getElementById('adv-trans-val').textContent = epTrans.toFixed(1) + 'mm';
+  document.getElementById('adv-trans-val').textContent = transVal.toFixed(1) + 'mm';
   document.getElementById('adv-epmin-label').textContent = epMin.toFixed(1) + 'mm';
   document.getElementById('adv-epmax-label').textContent = epMax.toFixed(1) + 'mm';
 }
@@ -1661,18 +1727,22 @@ function render() {
     }
   }
   const stepVal = parseFloat(document.getElementById('step').value);
-  const epMin = parseFloat(document.getElementById('epmin').value) || 0.5;
-  const epMax = parseFloat(document.getElementById('epmax').value) || 7;
+  
+  let epMin = parseFloat(document.getElementById('epmin').value) || 0.5;
+  if (minLimitMode === 'fl') {
+    epMin = epMin / fratio;
+  }
+  
+  let epMax = parseFloat(document.getElementById('epmax').value) || 7.0;
+  if (maxLimitMode === 'fl') {
+    epMax = epMax / fratio;
+  }
 
   // Update subtitle range text
-  const epMinRaw = document.getElementById('epmin').value || '0.5';
-  const epMaxRaw = document.getElementById('epmax').value || '7';
-  document.getElementById('desc-range').textContent = epMinRaw + '-' + epMaxRaw + 'mm';
+  document.getElementById('desc-range').textContent = epMin.toFixed(1) + '-' + epMax.toFixed(1) + 'mm';
 
   // Bounds change absolute value check
   if (epMin !== lastEpMin || epMax !== lastEpMax) {
-    epTrans = Math.min(Math.max(epTrans, epMin + 0.1), epMax - 0.1);
-    epTrans = Math.round(epTrans * 10) / 10;
     lastEpMin = epMin;
     lastEpMax = epMax;
     if (stepModeType === 'advanced') {
@@ -1731,8 +1801,9 @@ function render() {
     fls = res.fls;
   } else {
     // Advanced Mode Hybrid Calculation
-    const lowRes = runCalculationForSegment(lowStrategy, lowStep, epMin, epTrans, fratio, flength);
-    const highRes = runCalculationForSegment(highStrategy, highStep, epTrans, epMax, fratio, flength);
+    const epTransClamped = Math.round(Math.min(Math.max(epTrans, epMin + 0.1), epMax - 0.1) * 10) / 10;
+    const lowRes = runCalculationForSegment(lowStrategy, lowStep, epMin, epTransClamped, fratio, flength);
+    const highRes = runCalculationForSegment(highStrategy, highStep, epTransClamped, epMax, fratio, flength);
     
     eps = lowRes.eps.concat(highRes.eps.slice(1));
     fls = lowRes.fls.concat(highRes.fls.slice(1));
@@ -2044,6 +2115,58 @@ document.getElementById('step').addEventListener('input', render);
 
 document.getElementById('epmin').addEventListener('input', render);
 document.getElementById('epmax').addEventListener('input', render);
+
+const minModeButtons = document.querySelectorAll('#min-mode-toggle .segment-btn');
+minModeButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.classList.contains('active')) return;
+    
+    const epminInput = document.getElementById('epmin');
+    const rawVal = parseFloat(epminInput.value);
+    const fratio = parseFloat(document.getElementById('fratio').value) || 5;
+    
+    minModeButtons.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    minLimitMode = btn.dataset.mode;
+    
+    if (rawVal && !isNaN(rawVal)) {
+      if (minLimitMode === 'fl') {
+        epminInput.value = (rawVal * fratio).toFixed(1);
+        epminInput.step = '0.5';
+      } else {
+        epminInput.value = (rawVal / fratio).toFixed(1);
+        epminInput.step = '0.1';
+      }
+    }
+    render();
+  });
+});
+
+const maxModeButtons = document.querySelectorAll('#max-mode-toggle .segment-btn');
+maxModeButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.classList.contains('active')) return;
+    
+    const epmaxInput = document.getElementById('epmax');
+    const rawVal = parseFloat(epmaxInput.value);
+    const fratio = parseFloat(document.getElementById('fratio').value) || 5;
+    
+    maxModeButtons.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    maxLimitMode = btn.dataset.mode;
+    
+    if (rawVal && !isNaN(rawVal)) {
+      if (maxLimitMode === 'fl') {
+        epmaxInput.value = (rawVal * fratio).toFixed(0);
+        epmaxInput.step = '1';
+      } else {
+        epmaxInput.value = (rawVal / fratio).toFixed(1);
+        epmaxInput.step = '0.5';
+      }
+    }
+    render();
+  });
+});
 document.getElementById('desc-range-link').addEventListener('click', function (e) {
   e.preventDefault();
   const panel = document.querySelector('.pupil-range-row');
@@ -2096,14 +2219,23 @@ typeButtons.forEach(btn => {
     const simpleControls = document.getElementById('simple-step-controls');
     const advControls = document.getElementById('advanced-step-container');
     const controlsWrap = document.querySelector('.controls');
+    const pupilRangeRow = document.querySelector('.pupil-range-row');
     
     if (stepModeType === 'advanced') {
       simpleControls.classList.add('hide');
       controlsWrap.classList.add('controls-advanced');
       advControls.classList.remove('hide');
+      pupilRangeRow.classList.add('open');
       
-      const epMin = parseFloat(document.getElementById('epmin').value) || 0.5;
-      const epMax = parseFloat(document.getElementById('epmax').value) || 7.0;
+      const fratio = parseFloat(document.getElementById('fratio').value) || 5;
+      let epMin = parseFloat(document.getElementById('epmin').value) || 0.5;
+      if (minLimitMode === 'fl') {
+        epMin = epMin / fratio;
+      }
+      let epMax = parseFloat(document.getElementById('epmax').value) || 7.0;
+      if (maxLimitMode === 'fl') {
+        epMax = epMax / fratio;
+      }
       if (epTrans <= epMin || epTrans >= epMax) {
         epTrans = Math.round(((epMin + epMax) / 2) * 10) / 10;
       }
@@ -2114,6 +2246,7 @@ typeButtons.forEach(btn => {
       simpleControls.classList.remove('hide');
       controlsWrap.classList.remove('controls-advanced');
       advControls.classList.add('hide');
+      pupilRangeRow.classList.remove('open');
     }
     render();
   });
@@ -2216,11 +2349,87 @@ document.getElementById('copy-btn').addEventListener('click', () => {
   });
 });
 
+function resetInputsToDefault() {
+  document.getElementById('fratio').value = '5';
+  document.getElementById('fl-ap-input').value = '1000';
+  document.getElementById('epmin').value = '0.5';
+  document.getElementById('epmax').value = '7';
+  document.getElementById('step').value = '40';
+  document.getElementById('adv-trans-slider').value = '2.0';
+  document.getElementById('adv-step-low').value = '40';
+  document.getElementById('adv-step-high').value = '40';
+  
+  // Reset JS state variables
+  inputMode = 'fl';
+  apertureUnit = 'mm';
+  minLimitMode = 'ep';
+  maxLimitMode = 'ep';
+  stepModeType = 'simple';
+  stepMode = 'percent';
+  epTrans = 2.0;
+  lowStrategy = 'percent';
+  lowStep = 40;
+  lowStrategyUserModified = false;
+  highStrategy = 'pupil';
+  highStep = 1.00;
+  shouldUpdateHash = false; // clean load
+  
+  // Synchronize toggles active states
+  const syncToggles = (selector, activeMode) => {
+    const buttons = document.querySelectorAll(`${selector} .segment-btn`);
+    buttons.forEach(btn => {
+      if (btn.dataset.mode === activeMode || btn.dataset.unit === activeMode || btn.dataset.type === activeMode) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+  };
+  
+  syncToggles('#mode-toggle', 'fl');
+  syncToggles('#unit-toggle', 'mm');
+  syncToggles('#min-mode-toggle', 'ep');
+  syncToggles('#max-mode-toggle', 'ep');
+  syncToggles('#step-mode-type-toggle', 'simple');
+  
+  document.getElementById('unit-toggle').classList.add('hide');
+  
+  // Reset dropdowns
+  document.getElementById('step-mode-select').value = 'percent';
+  document.getElementById('adv-strategy-low').value = 'percent';
+  document.getElementById('adv-strategy-high').value = 'pupil';
+  
+  // Reset simple step slider min/max/step/value
+  const slider = document.getElementById('step');
+  slider.min = 20;
+  slider.max = 60;
+  slider.step = 1;
+  slider.value = 40;
+  
+  // Sync simple step UI
+  document.getElementById('step-out').textContent = '40%';
+  
+  // Update simple step control layout
+  document.getElementById('simple-step-controls').classList.remove('hide');
+  document.querySelector('.controls').classList.remove('controls-advanced');
+  document.getElementById('advanced-step-container').classList.add('hide');
+  document.querySelector('.pupil-range-row').classList.remove('open');
+  
+  // Clear cached values
+  lastRenderedFls = null;
+  lastRenderedEps = null;
+  lastRenderedFlength = null;
+  
+  lastEpMin = 0.5;
+  lastEpMax = 7.0;
+}
+
 // Parse hash on initial load after layout is complete
 setTimeout(() => {
   updateCachedDimensions();
   const applied = applyStateFromHash();
   if (!applied) {
+    resetInputsToDefault(); // Reset inputs to clear browser-autofilled stale values
     render();
   }
 }, 0);
