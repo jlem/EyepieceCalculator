@@ -32,7 +32,7 @@
   }
   main {
     width: 100%;
-    max-width: 640px;
+    max-width: 1200px;
   }
   h1 {
     font-size: 20px;
@@ -48,7 +48,24 @@
     display: grid;
     grid-template-columns: 1fr 1fr 1.2fr;
     gap: 16px;
-    margin-bottom: 1.5rem;
+  }
+  .controls.controls-advanced {
+    grid-template-columns: 1fr 1fr;
+  }
+  .setup-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 4px 20px rgba(0, 0, 0, 0.15);
+  }
+  #adv-strategy-select {
+    padding: 10px 14px;
+    font-size: 15px;
+    border-radius: 8px;
+    height: 42px;
+    box-sizing: border-box;
   }
   .optional-tag {
     color: var(--text-muted);
@@ -58,7 +75,7 @@
     font-size: 13px;
     color: var(--text-secondary);
     display: block;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
   }
   label[title] {
     cursor: help;
@@ -71,13 +88,15 @@
     border: 1px solid var(--border);
     border-radius: 8px;
     color: var(--text);
-    padding: 8px 10px;
-    font-size: 14px;
+    padding: 10px 14px;
+    font-size: 15px;
+    transition: all 0.2s ease;
   }
   input[type="number"]:focus,
   input[type="text"]:focus {
     outline: none;
     border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(77, 140, 240, 0.15);
   }
   /* Remove standard increment/decrement spin buttons */
   input[type="number"]::-webkit-outer-spin-button,
@@ -182,7 +201,7 @@
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 10px;
-    margin-top: 2.5rem;
+    margin-top: 0;
     margin-bottom: 2rem;
   }
   .stat-card {
@@ -258,6 +277,10 @@
     flex-direction: column;
     gap: 16px;
     margin-top: 2rem;
+    max-width: 675px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
   }
   @media (min-width: 1124px) {
     main {
@@ -294,6 +317,7 @@
       height: 100%;
       margin-top: 0;
       min-height: 0;
+      max-width: none;
     }
   }
   @media (min-width: 1400px) {
@@ -510,6 +534,235 @@
     border-top: 1px solid var(--border);
     flex-shrink: 0;
   }
+  .advanced-step-container {
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    grid-column: 1 / -1; /* spans full left column */
+  }
+  .adv-slider-section {
+    position: relative;
+    margin-bottom: 0;
+  }
+  .adv-slider-labels {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 8px;
+    height: 20px;
+    position: relative;
+  }
+  .adv-trans-bubble {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: #ffe082;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    transition: left 0.1s ease;
+  }
+  .bisected-slider-wrap {
+    position: relative;
+    height: 32px;
+    display: flex;
+    background: rgba(0, 0, 0, 0.25);
+    border: none;
+    border-radius: 8px 8px 0 0;
+    overflow: hidden;
+  }
+  .slider-segment {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    box-sizing: border-box;
+    padding: 0 12px;
+  }
+  #segment-low {
+    background: #242a35;
+    border-right: 1px dashed rgba(255, 255, 255, 0.15);
+  }
+  #segment-high {
+    background: #2d3441;
+  }
+  .slider-segment:hover {
+    filter: brightness(1.2);
+  }
+  .slider-segment .segment-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+  }
+  #adv-trans-slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border: none;
+    pointer-events: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+  }
+  #adv-trans-slider:focus {
+    outline: none;
+  }
+  #adv-trans-slider::-webkit-slider-runnable-track {
+    background: transparent;
+    border: none;
+  }
+  #adv-trans-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 32px;
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32' width='24' height='32'><rect x='10' y='2' width='4' height='28' rx='2' fill='%23ffe082'/><polygon points='5,16 10,11 10,21' fill='%23ffe082'/><polygon points='19,16 14,11 14,21' fill='%23ffe082'/></svg>") center no-repeat;
+    cursor: ew-resize;
+    pointer-events: auto;
+    border: none;
+    z-index: 10;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+  }
+  #adv-trans-slider::-moz-range-track {
+    background: transparent;
+    border: none;
+  }
+  #adv-trans-slider::-moz-range-thumb {
+    width: 24px;
+    height: 32px;
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32' width='24' height='32'><rect x='10' y='2' width='4' height='28' rx='2' fill='%23ffe082'/><polygon points='5,16 10,11 10,21' fill='%23ffe082'/><polygon points='19,16 14,11 14,21' fill='%23ffe082'/></svg>") center no-repeat;
+    cursor: ew-resize;
+    pointer-events: auto;
+    border: none;
+    z-index: 10;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+  }
+  .active-config-card {
+    background: rgba(0, 0, 0, 0.25);
+    border: none;
+    border-radius: 0 0 10px 10px;
+    padding: 14px 16px;
+  }
+  #card-low {
+    background: #242a35 !important;
+  }
+  #card-high {
+    background: #2d3441 !important;
+  }
+  .adv-cards-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: -1px;
+  }
+  @media (max-width: 580px) {
+    .adv-cards-grid {
+      grid-template-columns: 1fr;
+    }
+    .funnel-svg {
+      display: none !important;
+    }
+  }
+  .config-fields-stacked {
+    display: flex;
+    flex-direction: column;
+  }
+  .config-fields-stacked .step-mode-select {
+    width: 100%;
+    padding: 6px 8px;
+    font-size: 13px;
+    height: 32px;
+    border-radius: 6px;
+    box-sizing: border-box;
+  }
+  .setup-box {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  .setup-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+    gap: 20px;
+  }
+  .setup-tab-btn {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: -1px;
+    font-family: inherit;
+  }
+  .setup-tab-btn:hover {
+    color: var(--text);
+  }
+  .setup-tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  .config-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .config-header h4 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 0.02em;
+  }
+  .hint-link {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    cursor: pointer;
+    text-decoration: underline dotted;
+  }
+  .hint-link:hover {
+    color: var(--text);
+  }
+  .config-fields {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 16px;
+  }
 </style>
 </head>
 <body>
@@ -520,7 +773,13 @@
   <div class="app-layout">
     <!-- Left Column: Controls & Table -->
     <div class="left-panel">
-      <div class="pupil-range-row">
+      <!-- Setup Box Container -->
+      <div class="setup-box">
+        <div class="setup-tabs" id="step-mode-type-toggle">
+          <button type="button" class="setup-tab-btn active" data-type="simple">Simple Setup</button>
+          <button type="button" class="setup-tab-btn" data-type="advanced">Advanced Setup</button>
+        </div>
+        <div class="pupil-range-row">
         <div>
           <label for="epmin">Min exit pupil (mm)</label>
           <input type="number" id="epmin" value="0.5" min="0.1" max="5" step="0.1">
@@ -551,7 +810,7 @@
             </div>
           </div>
         </div>
-        <div>
+        <div id="simple-step-controls">
           <div class="step-label-row">
             <label for="step" title="This value may differ from the computed values because rounding is necessary to get the results to fit within the prescribed exit pupil limits.">Approx step size</label>
             <select id="step-mode-select" class="step-mode-select">
@@ -567,6 +826,92 @@
           </div>
         </div>
       </div>
+
+      <!-- Advanced Step Size Container -->
+      <div id="advanced-step-container" class="advanced-step-container hide">
+        <div class="adv-slider-section">
+          <div class="adv-slider-labels">
+            <span id="adv-epmin-label">0.5mm</span>
+            <div class="adv-trans-bubble" id="adv-trans-bubble-container">
+              Transition: <span id="adv-trans-val">2.0mm</span>
+            </div>
+            <span id="adv-epmax-label">7.0mm</span>
+          </div>
+
+          <div class="bisected-slider-wrap">
+          <div class="slider-segment" id="segment-low">
+            <span class="segment-label" id="label-segment-low">Low: Fixed Exit Pupil (0.50mm)</span>
+          </div>
+          <div class="slider-segment" id="segment-high">
+            <span class="segment-label" id="label-segment-high">High: Percent (40%)</span>
+          </div>
+          <input type="range" id="adv-trans-slider" min="0.6" max="6.9" step="0.1" value="2.0">
+        </div>
+      </div>
+
+      <!-- SVG Funnel Connectors -->
+      <svg class="funnel-svg" viewBox="0 0 100 100" preserveAspectRatio="none" style="display: block; width: 100%; height: 24px; margin: 0 0 -1px; pointer-events: none; z-index: 1;">
+        <path id="funnel-low" d="M 0,0 L 25,0 C 25,50 48.5,50 48.5,100 L 0,100 Z" fill="#242a35" />
+        <path id="funnel-high" d="M 25,0 L 100,0 L 100,100 L 51.5,100 C 51.5,50 25,50 25,0 Z" fill="#2d3441" />
+      </svg>
+
+        <div class="adv-cards-grid">
+          <!-- Low Config Card -->
+          <div class="active-config-card" id="card-low">
+            <div class="config-header">
+              <h4 id="config-title-low">Low Range (0.5mm → 2.0mm)</h4>
+            </div>
+            <div class="config-fields-stacked">
+              <div>
+                <label for="adv-strategy-low">Step Strategy</label>
+                <select id="adv-strategy-low" class="step-mode-select">
+                  <option value="percent">Percent</option>
+                  <option value="brightness">Percent brightness</option>
+                  <option value="fixed" title="You must enter a focal length so magnification can be calculated.">Fixed mag</option>
+                  <option value="pupil">Fixed exit pupil</option>
+                </select>
+              </div>
+              <div style="margin-top: 12px;">
+                <div class="step-label-row">
+                  <label for="adv-step-low">Step Size</label>
+                  <span class="step-out" id="adv-step-out-low">0.50mm</span>
+                </div>
+                <div class="step-row" style="margin-top: 4px;">
+                  <input type="range" id="adv-step-low" min="20" max="60" value="40" step="1" style="width: 100%;">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- High Config Card -->
+          <div class="active-config-card" id="card-high">
+            <div class="config-header">
+              <h4 id="config-title-high">High Range (2.0mm → 7.0mm)</h4>
+            </div>
+            <div class="config-fields-stacked">
+              <div>
+                <label for="adv-strategy-high">Step Strategy</label>
+                <select id="adv-strategy-high" class="step-mode-select">
+                  <option value="percent">Percent</option>
+                  <option value="brightness">Percent brightness</option>
+                  <option value="fixed" title="You must enter a focal length so magnification can be calculated.">Fixed mag</option>
+                  <option value="pupil">Fixed exit pupil</option>
+                </select>
+              </div>
+              <div style="margin-top: 12px;">
+                <div class="step-label-row">
+                  <label for="adv-step-high">Step Size</label>
+                  <span class="step-out" id="adv-step-out-high">40%</span>
+                </div>
+                <div class="step-row" style="margin-top: 4px;">
+                  <input type="range" id="adv-step-high" min="20" max="60" value="40" step="1" style="width: 100%;">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div> <!-- Close setup-box -->
 
       <div class="stats">
         <div class="stat-card">
@@ -684,6 +1029,151 @@
 let stepMode = 'percent';
 const stepValues = { percent: 40, fixed: 40, brightness: 50, pupil: 0.50 };
 
+let stepModeType = 'simple'; // 'simple' or 'advanced'
+let epTrans = 2.0;           // transition point
+let lowStrategy = 'pupil';   // low range strategy
+let lowStep = 0.50;          // low step size
+let highStrategy = 'percent';// high range strategy
+let highStep = 40;           // high step size
+let lastEpMin = 0.5;
+let lastEpMax = 7.0;
+
+function getStrategyLabel(strategy, step) {
+  const names = {
+    percent: 'Percent',
+    brightness: 'Brightness',
+    fixed: 'Fixed Mag',
+    pupil: 'Exit Pupil',
+    };
+  const suffixes = {
+    percent: '%',
+    brightness: '%',
+    fixed: 'x',
+    pupil: 'mm',
+    };
+  const formattedStep = strategy === 'pupil' ? step.toFixed(2) : step;
+  return `${names[strategy]} (${formattedStep}${suffixes[strategy]})`;
+}
+
+function syncAdvancedSliderBounds(side, strategy, value) {
+  const slider = document.getElementById(`adv-step-${side}`);
+  if (strategy === 'brightness') {
+    slider.min = 25;
+    slider.max = 100;
+    slider.step = 1;
+  } else if (strategy === 'pupil') {
+    slider.min = 0.25;
+    slider.max = 1.00;
+    slider.step = 0.05;
+  } else {
+    slider.min = 20;
+    slider.max = 60;
+    slider.step = 1;
+  }
+  slider.value = value;
+  updateAdvancedStepOutput(side, strategy, value);
+}
+
+function updateAdvancedStepOutput(side, strategy, value) {
+  const out = document.getElementById(`adv-step-out-${side}`);
+  let suffix = '%';
+  if (strategy === 'fixed') {
+    suffix = 'x';
+  } else if (strategy === 'pupil') {
+    suffix = 'mm';
+  }
+  out.textContent = (strategy === 'pupil' ? value.toFixed(2) : value) + suffix;
+}
+
+function updateActiveSegmentUI() {
+  const epMin = parseFloat(document.getElementById('epmin').value) || 0.5;
+  const epMax = parseFloat(document.getElementById('epmax').value) || 7.0;
+  
+  document.getElementById('config-title-low').textContent = `Low Range (${epMin.toFixed(1)}mm → ${epTrans.toFixed(1)}mm)`;
+  document.getElementById('config-title-high').textContent = `High Range (${epTrans.toFixed(1)}mm → ${epMax.toFixed(1)}mm)`;
+  
+  const inputValRaw = document.getElementById('fl-ap-input').value;
+  const hasFlength = !!inputValRaw && !isNaN(parseFloat(inputValRaw));
+  
+  const lowSelect = document.getElementById('adv-strategy-low');
+  const highSelect = document.getElementById('adv-strategy-high');
+  
+  const lowFixedOpt = lowSelect.querySelector('option[value="fixed"]');
+  const highFixedOpt = highSelect.querySelector('option[value="fixed"]');
+  
+  lowFixedOpt.disabled = !hasFlength;
+  highFixedOpt.disabled = !hasFlength;
+  if (!hasFlength) {
+    lowFixedOpt.setAttribute('title', 'You must enter a focal length so magnification can be calculated.');
+    highFixedOpt.setAttribute('title', 'You must enter a focal length so magnification can be calculated.');
+  } else {
+    lowFixedOpt.removeAttribute('title');
+    highFixedOpt.removeAttribute('title');
+  }
+  
+  lowSelect.value = lowStrategy;
+  highSelect.value = highStrategy;
+  
+  syncAdvancedSliderBounds('low', lowStrategy, lowStep);
+  syncAdvancedSliderBounds('high', highStrategy, highStep);
+}
+
+function updateFunnels(wLow) {
+  const funnelLow = document.getElementById('funnel-low');
+  const funnelHigh = document.getElementById('funnel-high');
+  if (!funnelLow || !funnelHigh) return;
+  
+  const container = document.querySelector('.adv-cards-grid');
+  const containerWidth = container ? container.getBoundingClientRect().width : 600;
+  const gapPct = containerWidth > 0 ? (16 / containerWidth) * 100 : 2.67;
+  const halfGap = gapPct / 2;
+  const lowEnd = 50 - halfGap;
+  const highStart = 50 + halfGap;
+  
+  funnelLow.setAttribute('d', `M 0,0 L ${wLow},0 C ${wLow},50 ${lowEnd},50 ${lowEnd},100 L 0,100 Z`);
+  funnelHigh.setAttribute('d', `M ${wLow},0 L 100,0 L 100,100 L ${highStart},100 C ${highStart},50 ${wLow},50 ${wLow},0 Z`);
+}
+
+function updateAdvancedSliderVisuals() {
+  const epMin = parseFloat(document.getElementById('epmin').value) || 0.5;
+  const epMax = parseFloat(document.getElementById('epmax').value) || 7.0;
+  
+  const slider = document.getElementById('adv-trans-slider');
+  slider.min = (epMin + 0.1).toFixed(1);
+  slider.max = (epMax - 0.1).toFixed(1);
+  slider.value = epTrans.toFixed(1);
+  
+  const totalRange = epMax - epMin;
+  const lowWidth = totalRange > 0 ? ((epTrans - epMin) / totalRange) * 100 : 50;
+  const highWidth = 100 - lowWidth;
+  
+  document.getElementById('segment-low').style.width = lowWidth + '%';
+  document.getElementById('segment-high').style.width = highWidth + '%';
+  document.getElementById('adv-trans-bubble-container').style.left = lowWidth + '%';
+  
+  document.getElementById('adv-trans-val').textContent = epTrans.toFixed(1) + 'mm';
+  document.getElementById('adv-epmin-label').textContent = epMin.toFixed(1) + 'mm';
+  document.getElementById('adv-epmax-label').textContent = epMax.toFixed(1) + 'mm';
+  
+  document.getElementById('label-segment-low').textContent = 'Low: ' + getStrategyLabel(lowStrategy, lowStep);
+  document.getElementById('label-segment-high').textContent = 'High: ' + getStrategyLabel(highStrategy, highStep);
+  
+  updateFunnels(lowWidth);
+}
+
+function runCalculationForSegment(strategy, step, minVal, maxVal, fratio, flength) {
+  if (strategy === 'fixed') {
+    return computeSetFixed(fratio, step, minVal, maxVal, flength);
+  } else if (strategy === 'brightness') {
+    return computeSetBrightness(fratio, step, minVal, maxVal);
+  } else if (strategy === 'pupil') {
+    return computeSetPupil(fratio, step, minVal, maxVal);
+
+  } else {
+    return computeSet(fratio, step, minVal, maxVal);
+  }
+}
+
 function computeSet(fratio, stepPct, epMin, epMax) {
   const R = epMax / epMin;
   const k = 1 + stepPct / 100;
@@ -790,24 +1280,67 @@ function render() {
   const epMaxRaw = document.getElementById('epmax').value || '7';
   document.getElementById('desc-range').textContent = epMinRaw + '-' + epMaxRaw + 'mm';
 
-  stepValues[stepMode] = stepVal;
-
-  updateStepModeUI(!!flength);
-  let unit = '%';
-  if (stepMode === 'fixed') {
-    unit = 'x';
-  } else if (stepMode === 'pupil') {
-    unit = 'mm';
+  // Bounds change absolute value check
+  if (epMin !== lastEpMin || epMax !== lastEpMax) {
+    epTrans = Math.min(Math.max(epTrans, epMin + 0.1), epMax - 0.1);
+    epTrans = Math.round(epTrans * 10) / 10;
+    lastEpMin = epMin;
+    lastEpMax = epMax;
+    if (stepModeType === 'advanced') {
+      updateAdvancedSliderVisuals();
+      updateActiveSegmentUI();
+    }
   }
-  document.getElementById('step-out').textContent = (stepMode === 'pupil' ? stepVal.toFixed(2) : stepVal) + unit;
 
-  const { N, eps, fls } = stepMode === 'fixed'
-    ? computeSetFixed(fratio, stepVal, epMin, epMax, flength)
-    : stepMode === 'brightness'
-      ? computeSetBrightness(fratio, stepVal, epMin, epMax)
-      : stepMode === 'pupil'
-        ? computeSetPupil(fratio, stepVal, epMin, epMax)
-        : computeSet(fratio, stepVal, epMin, epMax);
+  // Fallback check for advanced mode fixed mag if flength is missing
+  if (stepModeType === 'advanced') {
+    if (lowStrategy === 'fixed' && !flength) {
+      lowStrategy = 'percent';
+      lowStep = 40;
+    }
+    if (highStrategy === 'fixed' && !flength) {
+      highStrategy = 'percent';
+      highStep = 40;
+    }
+    updateActiveSegmentUI();
+  }
+
+  let N, eps, fls;
+  let shadingStartIdx = null;
+  if (stepModeType === 'simple') {
+    stepValues[stepMode] = stepVal;
+    updateStepModeUI(!!flength);
+    
+    let unit = '%';
+    if (stepMode === 'fixed') {
+      unit = 'x';
+    } else if (stepMode === 'pupil') {
+      unit = 'mm';
+
+    }
+    document.getElementById('step-out').textContent = (stepMode === 'pupil' ? stepVal.toFixed(2) : stepVal) + unit;
+
+    const res = stepMode === 'fixed'
+      ? computeSetFixed(fratio, stepVal, epMin, epMax, flength)
+      : stepMode === 'brightness'
+        ? computeSetBrightness(fratio, stepVal, epMin, epMax)
+        : stepMode === 'pupil'
+          ? computeSetPupil(fratio, stepVal, epMin, epMax)
+
+            : computeSet(fratio, stepVal, epMin, epMax);
+    N = res.N;
+    eps = res.eps;
+    fls = res.fls;
+  } else {
+    // Advanced Mode Hybrid Calculation
+    const lowRes = runCalculationForSegment(lowStrategy, lowStep, epMin, epTrans, fratio, flength);
+    const highRes = runCalculationForSegment(highStrategy, highStep, epTrans, epMax, fratio, flength);
+    
+    eps = lowRes.eps.concat(highRes.eps.slice(1));
+    fls = lowRes.fls.concat(highRes.fls.slice(1));
+    N = eps.length;
+    shadingStartIdx = lowRes.eps.length - 1;
+  }
 
   document.getElementById('out-count').textContent = N;
   document.getElementById('out-short').textContent = fls[0].toFixed(1) + 'mm';
@@ -857,9 +1390,9 @@ function render() {
     (flength ? '<th>Magnification</th><th>Mag. change</th>' : '') + '</tr></thead>' +
     '<tbody>' + rows + '</tbody></table>';
 
-  renderLineChart('fl-chart', fls, null, null, 'fl');
+  renderLineChart('fl-chart', fls, null, null, 'fl', null, shadingStartIdx);
 
-  renderLineChart('brightness-chart', eps.map(ep => ep * ep), v => v.toFixed(1), v => v.toFixed(1), 'brightness');
+  renderLineChart('brightness-chart', eps.map(ep => ep * ep), v => v.toFixed(1), v => v.toFixed(1), 'brightness', null, shadingStartIdx);
 
   const brightnessChangeWrap = document.getElementById('brightness-change-chart-wrap');
   if (eps.length > 1) {
@@ -872,7 +1405,8 @@ function render() {
       brightnessChanges.push((ratio - 1) * 100);
       brightnessChangeLabels.push(i + '→' + (i + 1));
     }
-    renderLineChart('brightness-change-chart', brightnessChanges, v => v.toFixed(0) + '%', v => v.toFixed(0) + '%', 'brightness-change', brightnessChangeLabels);
+    const changeShadingIdx = shadingStartIdx !== null ? shadingStartIdx - 0.5 : null;
+    renderLineChart('brightness-change-chart', brightnessChanges, v => v.toFixed(0) + '%', v => v.toFixed(0) + '%', 'brightness-change', brightnessChangeLabels, changeShadingIdx);
   } else {
     brightnessChangeWrap.style.display = 'none';
   }
@@ -880,13 +1414,13 @@ function render() {
   const magWrap = document.getElementById('mag-chart-wrap');
   if (flength) {
     magWrap.style.display = '';
-    renderLineChart('mag-chart', fls.map(fl => flength / fl), v => v.toFixed(0), v => v.toFixed(0) + 'x', 'mag');
+    renderLineChart('mag-chart', fls.map(fl => flength / fl), v => v.toFixed(0), v => v.toFixed(0) + 'x', 'mag', null, shadingStartIdx);
   } else {
     magWrap.style.display = 'none';
   }
 }
 
-function renderLineChart(elementId, values, axisFmt, pointFmt, lineClass, xLabels) {
+function renderLineChart(elementId, values, axisFmt, pointFmt, lineClass, xLabels, shadingStartIdx) {
   axisFmt = axisFmt || (v => v.toFixed(0));
   pointFmt = pointFmt || (v => v.toFixed(1));
   lineClass = lineClass || 'fl';
@@ -927,6 +1461,17 @@ function renderLineChart(elementId, values, axisFmt, pointFmt, lineClass, xLabel
     const y = yAt(val);
     svg += '<line class="grid-line" x1="' + padL + '" y1="' + y + '" x2="' + (W - padR) + '" y2="' + y + '"></line>';
     svg += '<text class="axis-text" x="' + (padL - 8) + '" y="' + (y + 3) + '" text-anchor="end">' + axisFmt(val) + '</text>';
+  }
+
+  // shading region if shadingStartIdx is defined
+  if (shadingStartIdx !== null && shadingStartIdx >= 0 && shadingStartIdx <= N - 1) {
+    const xTrans = padL + (shadingStartIdx / (N === 1 ? 1 : N - 1)) * plotW;
+    const shW = W - padR - xTrans;
+    if (shW > 0) {
+      svg += '<rect class="chart-shading" x="' + xTrans + '" y="' + padT + '" width="' + shW + '" height="' + plotH + '" fill="rgba(255, 255, 255, 0.035)" pointer-events="none"></rect>';
+      svg += '<line class="chart-shading-line" x1="' + xTrans + '" y1="' + padT + '" x2="' + xTrans + '" y2="' + (padT + plotH) + '" stroke="rgba(255, 255, 255, 0.12)" stroke-width="1.5" stroke-dasharray="3,3" pointer-events="none"></line>';
+      svg += '<text class="chart-shading-text" x="' + (xTrans + 6) + '" y="' + (padT - 6) + '" fill="rgba(255, 255, 255, 0.45)" font-size="8px" font-weight="700" letter-spacing="0.05em" pointer-events="none">HIGH RANGE</text>';
+    }
   }
 
   // x-axis line
@@ -1109,12 +1654,85 @@ document.getElementById('step-mode-select').addEventListener('change', function 
     slider.max = 1.00;
     slider.step = 0.05;
     slider.value = stepValues.pupil;
+
   } else {
     slider.min = 20;
     slider.max = 60;
     slider.step = 1;
     slider.value = stepValues[stepMode];
   }
+  render();
+});
+
+// Advanced Mode Event Listeners
+const typeButtons = document.querySelectorAll('#step-mode-type-toggle .setup-tab-btn');
+typeButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.classList.contains('active')) return;
+    typeButtons.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    stepModeType = btn.dataset.type;
+    
+    const simpleControls = document.getElementById('simple-step-controls');
+    const advControls = document.getElementById('advanced-step-container');
+    const controlsWrap = document.querySelector('.controls');
+    
+    if (stepModeType === 'advanced') {
+      simpleControls.classList.add('hide');
+      controlsWrap.classList.add('controls-advanced');
+      advControls.classList.remove('hide');
+      
+      const epMin = parseFloat(document.getElementById('epmin').value) || 0.5;
+      const epMax = parseFloat(document.getElementById('epmax').value) || 7.0;
+      if (epTrans <= epMin || epTrans >= epMax) {
+        epTrans = Math.round(((epMin + epMax) / 2) * 10) / 10;
+      }
+      
+      updateAdvancedSliderVisuals();
+      updateActiveSegmentUI();
+    } else {
+      simpleControls.classList.remove('hide');
+      controlsWrap.classList.remove('controls-advanced');
+      advControls.classList.add('hide');
+    }
+    render();
+  });
+});
+
+document.getElementById('adv-trans-slider').addEventListener('input', function () {
+  epTrans = parseFloat(this.value);
+  updateAdvancedSliderVisuals();
+  updateActiveSegmentUI();
+  render();
+});
+
+document.getElementById('adv-strategy-low').addEventListener('change', function () {
+  lowStrategy = this.value;
+  const defaultSteps = { percent: 40, fixed: 40, brightness: 50, pupil: 0.50 };
+  lowStep = defaultSteps[lowStrategy];
+  syncAdvancedSliderBounds('low', lowStrategy, lowStep);
+  render();
+});
+
+document.getElementById('adv-strategy-high').addEventListener('change', function () {
+  highStrategy = this.value;
+  const defaultSteps = { percent: 40, fixed: 40, brightness: 50, pupil: 0.50 };
+  highStep = defaultSteps[highStrategy];
+  syncAdvancedSliderBounds('high', highStrategy, highStep);
+  render();
+});
+
+document.getElementById('adv-step-low').addEventListener('input', function () {
+  lowStep = parseFloat(this.value);
+  updateAdvancedStepOutput('low', lowStrategy, lowStep);
+  updateAdvancedSliderVisuals();
+  render();
+});
+
+document.getElementById('adv-step-high').addEventListener('input', function () {
+  highStep = parseFloat(this.value);
+  updateAdvancedStepOutput('high', highStrategy, highStep);
+  updateAdvancedSliderVisuals();
   render();
 });
 let resizeTimeout;
