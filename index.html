@@ -13,7 +13,7 @@
     --surface: #171b21;
     --surface-2: #1e232b;
     --border: #2a2f38;
-    --text: #e8eaed;
+    --text: #d8dee7;
     --text-secondary: #9aa1ab;
     --text-muted: #6b7280;
     --accent: #ea9991;
@@ -249,14 +249,14 @@
   thead th {
     text-align: left;
     padding: 10px 12px;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 500;
-    color: var(--text-muted);
+    color: var(--accent);
     border-bottom: 1px solid var(--border);
   }
   tbody td {
     padding: 10px 12px;
-    font-size: 14px;
+    font-size: 13px;
     border-bottom: 1px solid var(--border);
   }
   @media (max-width: 480px) {
@@ -373,27 +373,27 @@
   }
   .line-chart .brightness-line {
     fill: none;
-    stroke: var(--accent);
+    stroke: var(--accent2);
     stroke-width: 2;
   }
   .line-chart .brightness-dot {
-    fill: var(--accent);
+    fill: var(--accent2);
   }
   .line-chart .brightness-change-line {
     fill: none;
-    stroke: var(--accent);
+    stroke: var(--accent3);
     stroke-width: 2;
   }
   .line-chart .brightness-change-dot {
-    fill: var(--accent);
+    fill: var(--accent3);
   }
   .line-chart .mag-line {
     fill: none;
-    stroke: var(--accent);
+    stroke: var(--accent4);
     stroke-width: 2;
   }
   .line-chart .mag-dot {
-    fill: var(--accent);
+    fill: var(--accent4);
   }
   .line-chart .axis-text {
     fill: var(--text-muted);
@@ -517,7 +517,7 @@
   }
   .segment-btn.active {
     background: var(--surface-2);
-    color: var(--text);
+    color: var(--accent);
     box-shadow: 0 1px 3px rgba(0,0,0,0.2);
   }
   .label-segmented-row {
@@ -596,7 +596,7 @@
   }
   .adv-field-row label {
     font-size: 11px;
-    color: var(--text-muted);
+    color: var(--text-secondary);
     font-weight: 600;
     min-width: 60px;
     flex-shrink: 0;
@@ -617,7 +617,7 @@
     min-width: 48px;
     text-align: right;
     font-size: 11px;
-    color: var(--accent);
+    color: var(--text);
     font-weight: 700;
     flex-shrink: 0;
   }
@@ -662,6 +662,9 @@
     transform: translateX(-50%);
     white-space: nowrap;
     transition: left 0.1s ease;
+  }
+  #adv-trans-val {
+    color: var(--text);
   }
   .bisected-slider-wrap {
     position: relative;
@@ -779,7 +782,7 @@
     background: transparent;
     border: none;
     border-bottom: 2px solid transparent;
-    color: var(--text-muted);
+    color: var(--text);
     font-size: 13px;
     font-weight: 600;
     padding: 8px 4px;
@@ -789,7 +792,7 @@
     font-family: inherit;
   }
   .setup-tab-btn:hover {
-    color: var(--text);
+    color: white;
   }
   .setup-tab-btn.active {
     color: var(--accent);
@@ -898,7 +901,7 @@
             <span id="adv-epmin-label" class="adv-trans-bound">0.5mm</span>
             <div class="adv-trans-track-wrap">
               <div class="adv-trans-bubble" id="adv-trans-bubble-container">
-                Transition: <span id="adv-trans-val">2.0mm</span>
+                Transition point: <span id="adv-trans-val">2.0mm</span>
               </div>
               <div class="bisected-slider-wrap">
                 <div class="slider-segment" id="segment-low"></div>
