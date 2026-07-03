@@ -218,6 +218,19 @@
     margin-bottom: 16px;
     width: 100%;
   }
+  .text-muted {
+    color: var(--text-muted) !important;
+  }
+  .sortable-header {
+    cursor: pointer;
+  }
+  .sortable-header:hover {
+    color: var(--accent) !important;
+  }
+  .sortable-header.sort-active {
+    color: var(--accent) !important;
+    font-weight: 700;
+  }
   .enforce-limit-col {
     display: flex;
     flex-direction: column;
@@ -1351,6 +1364,10 @@ let lastRenderedEps = null;
 let lastRenderedFlength = null;
 let lastRenderedPersonalLimit = null;
 let lastRenderedEnforce = null;
+let lastRenderedSortColumn = null;
+let lastRenderedSortOrder = null;
+let sortColumn = 'fl';
+let sortOrder = 'desc';
 
 let isApplyingHash = false;
 let shouldUpdateHash = !!window.location.hash;
@@ -1607,6 +1624,8 @@ function applyStateFromHash() {
   lastRenderedFlength = null;
   lastRenderedPersonalLimit = null;
   lastRenderedEnforce = null;
+  lastRenderedSortColumn = null;
+  lastRenderedSortOrder = null;
 
   updateCachedDimensions();
   render();
@@ -2071,10 +2090,12 @@ function render() {
   const flengthChanged = flength !== lastRenderedFlength;
   const personalLimitChanged = personalEpLimit !== lastRenderedPersonalLimit;
   const enforceChanged = enforceLimit !== lastRenderedEnforce;
+  const sortColumnChanged = sortColumn !== lastRenderedSortColumn;
+  const sortOrderChanged = sortOrder !== lastRenderedSortOrder;
   
   updateHashFromState();
   
-  if (!flsChanged && !epsChanged && !flengthChanged && !personalLimitChanged && !enforceChanged) {
+  if (!flsChanged && !epsChanged && !flengthChanged && !personalLimitChanged && !enforceChanged && !sortColumnChanged && !sortOrderChanged) {
     return;
   }
   
@@ -2083,6 +2104,8 @@ function render() {
   lastRenderedFlength = flength;
   lastRenderedPersonalLimit = personalEpLimit;
   lastRenderedEnforce = enforceLimit;
+  lastRenderedSortColumn = sortColumn;
+  lastRenderedSortOrder = sortOrder;
 
   // Update cheap output values immediately
   document.getElementById('out-count').textContent = N;
@@ -2115,51 +2138,77 @@ function render() {
     }
   }
 
+  let eyepieces = fls.map((fl, i) => ({
+    originalIndex: i + 1,
+    fl: fl,
+    ep: eps[i],
+    mag: flength ? flength / fl : null
+  }));
+
+  eyepieces.sort((a, b) => {
+    let valA = a[sortColumn];
+    let valB = b[sortColumn];
+    if (valA === null || valB === null) return 0;
+    return sortOrder === 'asc' ? valA - valB : valB - valA;
+  });
+
   let rows = '';
-  fls.forEach((fl, i) => {
+  eyepieces.forEach((item, i) => {
     let brightnessChangeText = '—';
     if (i > 0) {
-      const prevEp = eps[i - 1];
-      const currEp = eps[i];
+      const prevEp = eyepieces[i - 1].ep;
+      const currEp = item.ep;
       const brightnessRatio = (currEp * currEp) / (prevEp * prevEp);
       const brightnessChangePct = (brightnessRatio - 1) * 100;
       brightnessChangeText = (brightnessChangePct >= 0 ? '+' : '') + brightnessChangePct.toFixed(0) + '%';
     }
 
     let magChangeText = '—';
-    if (flength && i < fls.length - 1) {
-      const currMag = flength / fls[i];
-      const nextMag = flength / fls[i + 1];
-      const magDiff = currMag - nextMag;
+    if (flength && i > 0) {
+      const prevMag = eyepieces[i - 1].mag;
+      const currMag = item.mag;
+      const magDiff = currMag - prevMag;
       magChangeText = (magDiff >= 0 ? '+' : '') + magDiff.toFixed(0) + 'x';
     }
 
-    const isWarn = eps[i] > personalEpLimit;
+    const isWarn = item.ep > personalEpLimit;
     const warnIconHtml = isWarn ? '<svg viewBox="0 0 24 24" width="14" height="14" fill="var(--text-warn)" style="vertical-align: middle; margin-right: 4px; margin-top: -2px;" title="This exit pupil exceeds your personal exit pupil limit"><title>This exit pupil exceeds your personal exit pupil limit</title><path d="M12 2L1 21h22L12 2zm1 14h-2v-2h2v2zm0-4h-2V8h2v4z"/></svg>' : '';
 
-    let row = '<tr' + (isWarn ? ' class="row-warn"' : '') + '><td>' + (i + 1) + '</td>' +
-      '<td>' + fl.toFixed(1) + 'mm</td>' +
-      '<td>' + warnIconHtml + eps[i].toFixed(2) + 'mm</td>' +
-      '<td>' + brightnessChangeText + '</td>';
+    let row = '<tr' + (isWarn ? ' class="row-warn"' : '') + '><td>' + item.originalIndex + '</td>' +
+      '<td>' + item.fl.toFixed(1) + 'mm</td>' +
+      '<td>' + warnIconHtml + item.ep.toFixed(2) + 'mm</td>' +
+      '<td class="text-muted">' + brightnessChangeText + '</td>';
     if (flength) {
-      row += '<td>' + (flength / fl).toFixed(0) + 'x</td>' +
-             '<td>' + magChangeText + '</td>';
+      row += '<td>' + item.mag.toFixed(0) + 'x</td>' +
+             '<td class="text-muted">' + magChangeText + '</td>';
     }
     row += '</tr>';
     rows += row;
   });
 
+  const getHeaderHtml = (colId, label) => {
+    const isSorted = sortColumn === colId;
+    const arrow = isSorted ? (sortOrder === 'asc' ? ' ▲' : ' ▼') : '';
+    const activeClass = isSorted ? 'sort-active' : '';
+    return '<th class="sortable-header ' + activeClass + '" data-col="' + colId + '">' + label + arrow + '</th>';
+  };
+
   document.getElementById('table-wrap').innerHTML =
     '<table>' +
     '<colgroup>' +
       '<col style="width: 8%;">' +
-      '<col style="width: ' + (flength ? '18%' : '30%') + ';">' +
-      '<col style="width: ' + (flength ? '18%' : '30%') + ';">' +
-      '<col style="width: ' + (flength ? '20%' : '32%') + ';">' +
-      (flength ? '<col style="width: 18%;"><col style="width: 18%;">' : '') +
+      '<col style="width: ' + (flength ? '20%' : '30%') + ';">' +
+      '<col style="width: ' + (flength ? '16%' : '30%') + ';">' +
+      '<col style="width: ' + (flength ? '16%' : '32%') + ';">' +
+      (flength ? '<col style="width: 24%;"><col style="width: 16%;">' : '') +
     '</colgroup>' +
-    '<thead><tr><th>#</th><th>Focal length</th><th>Exit pupil</th><th>Brightness change</th>' +
-    (flength ? '<th>Magnification</th><th>Mag. change</th>' : '') + '</tr></thead>' +
+    '<thead><tr>' +
+      '<th>#</th>' +
+      getHeaderHtml('fl', 'Focal length') +
+      '<th>Exit pupil</th>' +
+      '<th class="text-muted">Δ Brightness</th>' +
+      (flength ? '<th>Magnification</th><th class="text-muted">Δ Mag</th>' : '') +
+    '</tr></thead>' +
     '<tbody>' + rows + '</tbody></table>';
 
   renderLineChart('fl-chart', fls, null, null, 'fl', null, shadingStartIdx);
@@ -2495,6 +2544,19 @@ document.getElementById('step-mode-select').addEventListener('change', function 
   }
   render();
 });
+document.getElementById('table-wrap').addEventListener('click', (e) => {
+  const header = e.target.closest('.sortable-header');
+  if (header) {
+    const col = header.dataset.col;
+    if (sortColumn === col) {
+      sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+    } else {
+      sortColumn = col;
+      sortOrder = 'desc';
+    }
+    render();
+  }
+});
 
 // Advanced Mode Event Listeners
 const typeButtons = document.querySelectorAll('#step-mode-type-toggle .setup-tab-btn');
@@ -2712,6 +2774,10 @@ function resetInputsToDefault() {
   lastRenderedFlength = null;
   lastRenderedPersonalLimit = null;
   lastRenderedEnforce = null;
+  lastRenderedSortColumn = null;
+  lastRenderedSortOrder = null;
+  sortColumn = 'fl';
+  sortOrder = 'desc';
   
   lastEpMin = 0.5;
   lastEpMax = 7.0;
