@@ -16,12 +16,20 @@
     --text: #e8eaed;
     --text-secondary: #9aa1ab;
     --text-muted: #6b7280;
-    --accent: #4d8cf0;
+    --accent: #ea9991;
+    --accent2: #eab991;
+    --accent3: #a8c2a7;
+    --accent4: #9cccd8;
     --accent-dark: #1a3a63;
   }
   * { box-sizing: border-box; }
+  html {
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
+  }
   body {
     margin: 0;
+    min-width: 700px;
     background: var(--bg);
     color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -96,7 +104,7 @@
   input[type="text"]:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(77, 140, 240, 0.15);
+    box-shadow: 0 0 0 3px rgba(234, 153, 145, 0.15);
   }
   /* Remove standard increment/decrement spin buttons */
   input[type="number"]::-webkit-outer-spin-button,
@@ -111,7 +119,13 @@
     -webkit-appearance: none;
     width: 100%;
     height: 4px;
-    background: var(--border);
+    background: repeating-linear-gradient(
+      45deg,
+      rgba(158, 107, 107, 0.7),
+      rgba(158, 107, 107, 0.7) 6px,
+      rgba(134, 91, 91, 0.7) 6px,
+      rgba(134, 91, 91, 0.7) 12px
+    );
     border-radius: 2px;
     flex: 1;
   }
@@ -213,7 +227,7 @@
   }
   .stat-label {
     font-size: 12px;
-    color: #ffe082;
+    color: var(--accent);
     margin: 0 0 4px;
   }
   .stat-value {
@@ -221,7 +235,7 @@
     font-weight: 600;
     margin: 0;
     color: var(--text);
-    text-shadow: 0 0 12px rgba(77, 140, 240, 0.15);
+    text-shadow: 0 0 12px rgba(234, 153, 145, 0.15);
   }
   table {
     width: 100%;
@@ -258,7 +272,7 @@
   }
   .chart-label {
     font-size: 13px;
-    color: var(--text-secondary);
+    color: var(--text);
     margin: 0 0 12px;
   }
   .chart-container {
@@ -301,6 +315,7 @@
     .left-panel {
       height: 100%;
       overflow-y: auto;
+      scrollbar-gutter: stable;
       padding-right: 8px;
     }
     .right-panel {
@@ -358,27 +373,27 @@
   }
   .line-chart .brightness-line {
     fill: none;
-    stroke: #ffb74d;
+    stroke: var(--accent);
     stroke-width: 2;
   }
   .line-chart .brightness-dot {
-    fill: #ffb74d;
+    fill: var(--accent);
   }
   .line-chart .brightness-change-line {
     fill: none;
-    stroke: #b388ff;
+    stroke: var(--accent);
     stroke-width: 2;
   }
   .line-chart .brightness-change-dot {
-    fill: #b388ff;
+    fill: var(--accent);
   }
   .line-chart .mag-line {
     fill: none;
-    stroke: #81c784;
+    stroke: var(--accent);
     stroke-width: 2;
   }
   .line-chart .mag-dot {
-    fill: #81c784;
+    fill: var(--accent);
   }
   .line-chart .axis-text {
     fill: var(--text-muted);
@@ -391,7 +406,6 @@
   .formulas {
     margin-top: 2.5rem;
     padding-top: 1.5rem;
-    border-top: 1px solid var(--border);
   }
   .formulas summary {
     list-style: none;
@@ -472,7 +486,7 @@
     margin: 0;
   }
   .formula-legend .var {
-    color: #ffe082;
+    color: var(--accent);
     font-weight: 600;
     font-style: italic;
   }
@@ -537,7 +551,7 @@
     line-height: 1.6;
   }
   .placeholder-link {
-    color: #ffe082;
+    color: var(--accent);
     text-decoration: underline;
     cursor: pointer;
     transition: filter 0.2s;
@@ -564,7 +578,7 @@
     flex-shrink: 0;
   }
   .advanced-step-container {
-    margin-top: 1rem;
+    margin-top: 3rem;
     margin-bottom: 0;
     display: flex;
     flex-direction: column;
@@ -598,35 +612,42 @@
     flex: 1;
     min-width: 0;
     margin: 0;
-    background: rgba(255, 255, 255, 0.7);
   }
   .adv-field-row .step-out {
     min-width: 48px;
     text-align: right;
     font-size: 11px;
-    color: #ffe082;
+    color: var(--accent);
     font-weight: 700;
     flex-shrink: 0;
   }
+  #simple-step-controls .step-out {
+    min-width: 36px;
+  }
   .adv-slider-section {
     position: relative;
-    margin-bottom: 0;
+    margin-bottom: 16px;
   }
-  .adv-slider-labels {
+  .adv-trans-row {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 10px;
+  }
+  .adv-trans-bound {
     font-size: 11px;
-    color: var(--text-muted);
     font-weight: 600;
-    margin-bottom: 8px;
-    height: 20px;
+    color: var(--text);
+    flex-shrink: 0;
+  }
+  .adv-trans-track-wrap {
     position: relative;
+    flex: 1;
+    min-width: 0;
   }
   .adv-trans-bubble {
     background: var(--surface-2);
     border: 1px solid var(--border);
-    color: #ffe082;
+    color: var(--accent);
     padding: 2px 8px;
     border-radius: 12px;
     font-size: 10px;
@@ -635,6 +656,8 @@
     letter-spacing: 0.03em;
     box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     position: absolute;
+    bottom: 100%;
+    margin-bottom: 8px;
     left: 50%;
     transform: translateX(-50%);
     white-space: nowrap;
@@ -642,49 +665,31 @@
   }
   .bisected-slider-wrap {
     position: relative;
-    height: 32px;
+    height: 4px;
     display: flex;
-    background: rgba(0, 0, 0, 0.25);
-    border: none;
-    border-radius: 8px 8px 0 0;
-    overflow: hidden;
+    background: repeating-linear-gradient(
+      45deg,
+      rgba(158, 107, 107, 0.7),
+      rgba(158, 107, 107, 0.7) 6px,
+      rgba(134, 91, 91, 0.7) 6px,
+      rgba(134, 91, 91, 0.7) 12px
+    );
+    border-radius: 2px;
   }
   .slider-segment {
     height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    user-select: none;
     box-sizing: border-box;
-    padding: 0 12px;
   }
   #segment-low {
-    background: #242a35;
-    border-right: 1px dashed rgba(255, 255, 255, 0.15);
-  }
-  #segment-high {
-    background: #2d3441;
-  }
-  .slider-segment:hover {
-    filter: brightness(1.2);
-  }
-  .slider-segment .segment-label {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    pointer-events: none;
+    border-right: 1px dashed rgba(0, 0, 0, 0.3);
   }
   #adv-trans-slider {
     position: absolute;
-    top: 0;
+    top: 50%;
     left: 0;
     width: 100%;
-    height: 100%;
+    height: 32px;
+    transform: translateY(-50%);
     margin: 0;
     padding: 0;
     background: transparent;
@@ -706,7 +711,7 @@
     appearance: none;
     width: 24px;
     height: 32px;
-    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32' width='24' height='32'><rect x='10' y='2' width='4' height='28' rx='2' fill='%23ffe082'/><polygon points='5,16 10,11 10,21' fill='%23ffe082'/><polygon points='19,16 14,11 14,21' fill='%23ffe082'/></svg>") center no-repeat;
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32' width='24' height='32'><rect x='10' y='2' width='4' height='28' rx='2' fill='%23ea9991'/><polygon points='5,16 10,11 10,21' fill='%23ea9991'/><polygon points='19,16 14,11 14,21' fill='%23ea9991'/></svg>") center no-repeat;
     cursor: ew-resize;
     pointer-events: auto;
     border: none;
@@ -720,7 +725,7 @@
   #adv-trans-slider::-moz-range-thumb {
     width: 24px;
     height: 32px;
-    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32' width='24' height='32'><rect x='10' y='2' width='4' height='28' rx='2' fill='%23ffe082'/><polygon points='5,16 10,11 10,21' fill='%23ffe082'/><polygon points='19,16 14,11 14,21' fill='%23ffe082'/></svg>") center no-repeat;
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32' width='24' height='32'><rect x='10' y='2' width='4' height='28' rx='2' fill='%23ea9991'/><polygon points='5,16 10,11 10,21' fill='%23ea9991'/><polygon points='19,16 14,11 14,21' fill='%23ea9991'/></svg>") center no-repeat;
     cursor: ew-resize;
     pointer-events: auto;
     border: none;
@@ -728,16 +733,10 @@
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
   }
   .active-config-card {
-    background: rgba(0, 0, 0, 0.25);
-    border: none;
-    border-radius: 0 0 10px 10px;
+    background: #242932;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 5px;
     padding: 14px 16px;
-  }
-  #card-low {
-    background: #242a35 !important;
-  }
-  #card-high {
-    background: #2d3441 !important;
   }
   .adv-cards-grid {
     display: grid;
@@ -748,9 +747,6 @@
   @media (max-width: 580px) {
     .adv-cards-grid {
       grid-template-columns: 1fr;
-    }
-    .funnel-svg {
-      display: none !important;
     }
   }
   .config-fields-stacked {
@@ -766,7 +762,7 @@
     box-sizing: border-box;
   }
   .setup-box {
-    background: var(--surface-2);
+    background: #1a1e25;
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 20px;
@@ -898,30 +894,21 @@
       <!-- Advanced Step Size Container -->
       <div id="advanced-step-container" class="advanced-step-container hide">
         <div class="adv-slider-section">
-          <div class="adv-slider-labels">
-            <span id="adv-epmin-label">0.5mm</span>
-            <div class="adv-trans-bubble" id="adv-trans-bubble-container">
-              Transition: <span id="adv-trans-val">2.0mm</span>
+          <div class="adv-trans-row">
+            <span id="adv-epmin-label" class="adv-trans-bound">0.5mm</span>
+            <div class="adv-trans-track-wrap">
+              <div class="adv-trans-bubble" id="adv-trans-bubble-container">
+                Transition: <span id="adv-trans-val">2.0mm</span>
+              </div>
+              <div class="bisected-slider-wrap">
+                <div class="slider-segment" id="segment-low"></div>
+                <div class="slider-segment" id="segment-high"></div>
+                <input type="range" id="adv-trans-slider" min="0.6" max="6.9" step="0.1" value="2.0">
+              </div>
             </div>
-            <span id="adv-epmax-label">7.0mm</span>
+            <span id="adv-epmax-label" class="adv-trans-bound">7.0mm</span>
           </div>
-
-          <div class="bisected-slider-wrap">
-          <div class="slider-segment" id="segment-low">
-            <span class="segment-label" id="label-segment-low">Low: Fixed Exit Pupil (0.50mm)</span>
-          </div>
-          <div class="slider-segment" id="segment-high">
-            <span class="segment-label" id="label-segment-high">High: Percent (40%)</span>
-          </div>
-          <input type="range" id="adv-trans-slider" min="0.6" max="6.9" step="0.1" value="2.0">
-        </div>
       </div>
-
-      <!-- SVG Funnel Connectors -->
-      <svg class="funnel-svg" viewBox="0 0 100 100" preserveAspectRatio="none" style="display: block; width: 100%; height: 24px; margin: 0 0 -1px; pointer-events: none; z-index: 1;">
-        <path id="funnel-low" d="M 0,0 L 24.67,0 C 24.67,40 48.67,60 48.67,100 L 0,100 Z" fill="#242a35" />
-        <path id="funnel-high" d="M 25.33,0 L 100,0 L 100,100 L 51.33,100 C 51.33,60 25.33,40 25.33,0 Z" fill="#2d3441" />
-      </svg>
 
         <div class="adv-cards-grid">
           <!-- Low Config Card -->
@@ -996,7 +983,7 @@
           <div class="formula-group">
             <h3>Percent Step Mode</h3>
             <div class="formula-latex">
-              \[ {\color{#ffe082} N} = \left\lceil \frac{\ln({\color{#ffe082} EP_{\max}} / {\color{#ffe082} EP_{\min}})}{\ln\left(1 + \frac{{\color{#ffe082} Step\%}}{100}\right)} \right\rceil + 1 \]
+              \[ {\color{#ea9991} N} = \left\lceil \frac{\ln({\color{#ea9991} EP_{\max}} / {\color{#ea9991} EP_{\min}})}{\ln\left(1 + \frac{{\color{#ea9991} Step\%}}{100}\right)} \right\rceil + 1 \]
             </div>
             <p class="formula-legend">
               Where:<br>
@@ -1010,7 +997,7 @@
           <div class="formula-group">
             <h3>Percent Brightness Step Mode</h3>
             <div class="formula-latex">
-              \[ {\color{#ffe082} N} = \left\lceil \frac{\ln({\color{#ffe082} EP_{\max}} / {\color{#ffe082} EP_{\min}})}{\ln\left(\sqrt{1 + \frac{{\color{#ffe082} Step\%}}{100}}\right)} \right\rceil + 1 \]
+              \[ {\color{#ea9991} N} = \left\lceil \frac{\ln({\color{#ea9991} EP_{\max}} / {\color{#ea9991} EP_{\min}})}{\ln\left(\sqrt{1 + \frac{{\color{#ea9991} Step\%}}{100}}\right)} \right\rceil + 1 \]
             </div>
             <p class="formula-legend">
               Where:<br>
@@ -1024,7 +1011,7 @@
           <div class="formula-group">
             <h3>Fixed Magnification Step Mode</h3>
             <div class="formula-latex">
-              \[ {\color{#ffe082} N} = \left\lceil \frac{\frac{{\color{#ffe082} F_l}}{{\color{#ffe082} EP_{\min}} \times {\color{#ffe082} F_r}} - \frac{{\color{#ffe082} F_l}}{{\color{#ffe082} EP_{\max}} \times {\color{#ffe082} F_r}}}{{\color{#ffe082} Step}} \right\rceil + 1 \]
+              \[ {\color{#ea9991} N} = \left\lceil \frac{\frac{{\color{#ea9991} F_l}}{{\color{#ea9991} EP_{\min}} \times {\color{#ea9991} F_r}} - \frac{{\color{#ea9991} F_l}}{{\color{#ea9991} EP_{\max}} \times {\color{#ea9991} F_r}}}{{\color{#ea9991} Step}} \right\rceil + 1 \]
             </div>
             <p class="formula-legend">
               Where:<br>
@@ -1040,7 +1027,7 @@
           <div class="formula-group">
             <h3>Fixed Exit Pupil Step Mode</h3>
             <div class="formula-latex">
-              \[ {\color{#ffe082} N} = \left\lceil \frac{{\color{#ffe082} EP_{\max}} - {\color{#ffe082} EP_{\min}}}{{\color{#ffe082} Step}} \right\rceil + 1 \]
+              \[ {\color{#ea9991} N} = \left\lceil \frac{{\color{#ea9991} EP_{\max}} - {\color{#ea9991} EP_{\min}}}{{\color{#ea9991} Step}} \right\rceil + 1 \]
             </div>
             <p class="formula-legend">
               Where:<br>
@@ -1102,7 +1089,6 @@ let highStrategy = 'pupil';  // Fixed Exit Pupil
 let highStep = 1.00;         // 1.00mm
 let lastEpMin = 0.5;
 let lastEpMax = 7.0;
-let cachedContainerWidth = 600;
 let cachedChartWidth = 560;
 let cachedChartHeight = 240;
 
@@ -1120,11 +1106,6 @@ function arraysEqual(a, b) {
 }
 
 function updateCachedDimensions() {
-  const container = document.querySelector('.adv-cards-grid');
-  if (container) {
-    cachedContainerWidth = container.getBoundingClientRect().width;
-  }
-  
   const chart = document.querySelector('.line-chart');
   if (chart && chart.parentNode) {
     const rect = chart.parentNode.getBoundingClientRect();
@@ -1138,23 +1119,6 @@ function updateCachedDimensions() {
     cachedChartWidth = parentW > 0 ? parentW : 560;
     cachedChartHeight = parentH > 0 ? parentH : 240;
   }
-}
-
-function getStrategyLabel(strategy, step) {
-  const names = {
-    percent: 'Percent',
-    brightness: 'Brightness',
-    fixed: 'Fixed Mag',
-    pupil: 'Exit Pupil',
-    };
-  const suffixes = {
-    percent: '%',
-    brightness: '%',
-    fixed: 'x',
-    pupil: 'mm',
-    };
-  const formattedStep = strategy === 'pupil' ? step.toFixed(2) : step;
-  return `${names[strategy]} (${formattedStep}${suffixes[strategy]})`;
 }
 
 function syncAdvancedSliderBounds(side, strategy, value) {
@@ -1221,30 +1185,6 @@ function updateActiveSegmentUI() {
   updateAdvancedSliderVisuals();
 }
 
-function updateFunnels(wLow) {
-  const funnelLow = document.getElementById('funnel-low');
-  const funnelHigh = document.getElementById('funnel-high');
-  if (!funnelLow || !funnelHigh) return;
-  
-  const containerWidth = cachedContainerWidth;
-  
-  // Bottom gap is 16px
-  const gapPct = containerWidth > 0 ? (16 / containerWidth) * 100 : 2.67;
-  const halfGap = gapPct / 2;
-  const lowEnd = 50 - halfGap;
-  const highStart = 50 + halfGap;
-  
-  // Top gap is 4px (matches width of central drag bar)
-  const topGapPct = containerWidth > 0 ? (4 / containerWidth) * 100 : 0.67;
-  const topHalfGap = topGapPct / 2;
-  
-  const tLow = Math.max(0, wLow - topHalfGap);
-  const tHigh = Math.min(100, wLow + topHalfGap);
-  
-  funnelLow.setAttribute('d', `M 0,0 L ${tLow},0 C ${tLow},40 ${lowEnd},60 ${lowEnd},100 L 0,100 Z`);
-  funnelHigh.setAttribute('d', `M ${tHigh},0 L 100,0 L 100,100 L ${highStart},100 C ${highStart},60 ${tHigh},40 ${tHigh},0 Z`);
-}
-
 function updateAdvancedSliderVisuals() {
   const epMin = parseFloat(document.getElementById('epmin').value) || 0.5;
   const epMax = parseFloat(document.getElementById('epmax').value) || 7.0;
@@ -1265,11 +1205,6 @@ function updateAdvancedSliderVisuals() {
   document.getElementById('adv-trans-val').textContent = epTrans.toFixed(1) + 'mm';
   document.getElementById('adv-epmin-label').textContent = epMin.toFixed(1) + 'mm';
   document.getElementById('adv-epmax-label').textContent = epMax.toFixed(1) + 'mm';
-  
-  document.getElementById('label-segment-low').textContent = 'Low: ' + getStrategyLabel(lowStrategy, lowStep);
-  document.getElementById('label-segment-high').textContent = 'High: ' + getStrategyLabel(highStrategy, highStep);
-  
-  updateFunnels(lowWidth);
 }
 
 function runCalculationForSegment(strategy, step, minVal, maxVal, fratio, flength) {
@@ -1762,43 +1697,6 @@ flApInput.addEventListener('input', () => {
 });
 document.getElementById('step').addEventListener('input', render);
 
-const simpleSlider = document.getElementById('step');
-let simplePlaceholder = null;
-
-simpleSlider.addEventListener('pointerdown', (e) => {
-  const rect = simpleSlider.getBoundingClientRect();
-  
-  simplePlaceholder = document.createElement('div');
-  simplePlaceholder.style.width = rect.width + 'px';
-  simplePlaceholder.style.height = rect.height + 'px';
-  simplePlaceholder.style.flex = '1';
-  simplePlaceholder.style.minWidth = '0';
-  
-  simpleSlider.parentNode.insertBefore(simplePlaceholder, simpleSlider);
-  
-  simpleSlider.style.position = 'fixed';
-  simpleSlider.style.left = rect.left + 'px';
-  simpleSlider.style.top = rect.top + 'px';
-  simpleSlider.style.width = rect.width + 'px';
-  simpleSlider.style.zIndex = '1000';
-});
-
-const releaseSimpleSlider = () => {
-  if (simplePlaceholder) {
-    if (simplePlaceholder.parentNode) {
-      simplePlaceholder.parentNode.removeChild(simplePlaceholder);
-    }
-    simplePlaceholder = null;
-  }
-  simpleSlider.style.position = '';
-  simpleSlider.style.left = '';
-  simpleSlider.style.top = '';
-  simpleSlider.style.width = '';
-  simpleSlider.style.zIndex = '';
-};
-
-window.addEventListener('pointerup', releaseSimpleSlider);
-window.addEventListener('pointercancel', releaseSimpleSlider);
 document.getElementById('epmin').addEventListener('input', render);
 document.getElementById('epmax').addEventListener('input', render);
 document.getElementById('desc-range-link').addEventListener('click', function (e) {
