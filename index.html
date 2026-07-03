@@ -22,6 +22,7 @@
     --accent4: #9cccd8;
     --accent-dark: #1a3a63;
     --text-warn: #ffa700;
+    --text-error: #ef4444;
   }
   * { box-sizing: border-box; }
   html {
@@ -271,6 +272,11 @@
     padding-right: 36px;
     border-color: var(--text-warn) !important;
     box-shadow: 0 0 0 3px rgba(255, 167, 0, 0.15) !important;
+  }
+  .input-warning-wrapper.error-active input {
+    padding-right: 36px;
+    border-color: var(--text-error) !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
   }
   .input-warning-icon {
     position: absolute;
@@ -1046,7 +1052,16 @@
                   <button type="button" class="segment-btn" data-mode="fl">Min eyepiece FL</button>
                 </div>
               </div>
-              <input type="number" id="epmin" value="0.5" min="0.1" max="150" step="0.1">
+              <div class="input-warning-wrapper" id="epmin-warning-wrapper">
+                <input type="number" id="epmin" value="0.5" min="0.1" max="150" step="0.1">
+                <div class="limit-enforced-overlay" id="min-limit-enforced-overlay">Limit enforced</div>
+                <div class="input-warning-icon" id="epmin-error-icon" title="Minimum value must be less than maximum value">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="var(--text-error)">
+                    <title>Minimum value must be less than maximum value</title>
+                    <path d="M12 2L1 21h22L12 2zm1 14h-2v-2h2v2zm0-4h-2V8h2v4z"/>
+                  </svg>
+                </div>
+              </div>
             </div>
             <div>
               <div class="label-segmented-row">
@@ -1186,7 +1201,15 @@
         </div>
         <div class="stat-card">
           <p class="stat-label">Longest FL</p>
-          <p class="stat-value" id="out-long">35mm</p>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <p class="stat-value" id="out-long">35mm</p>
+            <div id="longest-fl-warn-icon" style="display: none; align-items: center; justify-content: center; cursor: help;">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="var(--text-warn)">
+                <title>This eyepiece focal length results in an exit pupil of 7.0mm, which exceeds your personal exit pupil limit.</title>
+                <path d="M12 2L1 21h22L12 2zm1 14h-2v-2h2v2zm0-4h-2V8h2v4z"/>
+              </svg>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1332,6 +1355,7 @@ let lastRenderedEnforce = null;
 let isApplyingHash = false;
 let shouldUpdateHash = !!window.location.hash;
 let enforceTimeoutId = null;
+let minEnforceTimeoutId = null;
 
 let minLimitMode = 'ep';
 let maxLimitMode = 'ep';
@@ -1835,6 +1859,18 @@ function showLimitEnforcedOverlay() {
   }, 2000);
 }
 
+function showMinLimitEnforcedOverlay() {
+  const overlay = document.getElementById('min-limit-enforced-overlay');
+  if (!overlay) return;
+  overlay.classList.add('show');
+  if (minEnforceTimeoutId) {
+    clearTimeout(minEnforceTimeoutId);
+  }
+  minEnforceTimeoutId = setTimeout(() => {
+    overlay.classList.remove('show');
+  }, 2000);
+}
+
 function render() {
   const fratio = parseFloat(document.getElementById('fratio').value) || 5;
   const inputValRaw = document.getElementById('fl-ap-input').value;
@@ -1866,6 +1902,7 @@ function render() {
     epMax = epMax / fratio;
   }
 
+  let epMaxWasCapped = false;
   if (enforceLimit && epMax > personalEpLimit) {
     const epmaxInput = document.getElementById('epmax');
     if (maxLimitMode === 'fl') {
@@ -1875,7 +1912,59 @@ function render() {
       epmaxInput.value = personalEpLimit;
       epMax = personalEpLimit;
     }
+    epMaxWasCapped = true;
     showLimitEnforcedOverlay();
+  }
+
+  const epminWarningWrapper = document.getElementById('epmin-warning-wrapper');
+  const epminErrorIcon = document.getElementById('epmin-error-icon');
+  
+  if (epMin >= epMax) {
+    if (epminWarningWrapper && epminErrorIcon) {
+      epminWarningWrapper.classList.add('error-active');
+      epminErrorIcon.classList.add('show');
+    }
+    
+    // Hide max warnings
+    const epmaxWarningWrapper = document.getElementById('epmax-warning-wrapper');
+    const epmaxWarningIcon = document.getElementById('epmax-warning-icon');
+    if (epmaxWarningWrapper && epmaxWarningIcon) {
+      epmaxWarningWrapper.classList.remove('warning-active');
+      epmaxWarningIcon.classList.remove('show');
+    }
+    
+    const longestWarn = document.getElementById('longest-fl-warn-icon');
+    if (longestWarn) {
+      longestWarn.style.display = 'none';
+    }
+    const outLong = document.getElementById('out-long');
+    if (outLong) {
+      outLong.style.color = '';
+      outLong.style.textShadow = '';
+      outLong.textContent = '—';
+    }
+    
+    // Reset output values to empty/placeholder
+    document.getElementById('out-count').textContent = '—';
+    document.getElementById('out-short').textContent = '—';
+    document.getElementById('table-wrap').innerHTML = '';
+    
+    // Clear SVGs of the charts
+    const flChart = document.getElementById('fl-chart');
+    if (flChart) flChart.innerHTML = '';
+    const brChart = document.getElementById('brightness-chart');
+    if (brChart) brChart.innerHTML = '';
+    const brChgChart = document.getElementById('brightness-change-chart');
+    if (brChgChart) brChgChart.innerHTML = '';
+    const magChart = document.getElementById('mag-chart');
+    if (magChart) magChart.innerHTML = '';
+    
+    return;
+  } else {
+    if (epminWarningWrapper && epminErrorIcon) {
+      epminWarningWrapper.classList.remove('error-active');
+      epminErrorIcon.classList.remove('show');
+    }
   }
 
   const hasEpMaxWarning = epMax > personalEpLimit;
@@ -1998,7 +2087,33 @@ function render() {
   // Update cheap output values immediately
   document.getElementById('out-count').textContent = N;
   document.getElementById('out-short').textContent = fls[0].toFixed(1) + 'mm';
-  document.getElementById('out-long').textContent = fls[fls.length - 1].toFixed(1) + 'mm';
+  
+  const longestFlVal = fls[fls.length - 1];
+  const outLong = document.getElementById('out-long');
+  outLong.textContent = longestFlVal.toFixed(1) + 'mm';
+  
+  const longestEp = eps[eps.length - 1];
+  const longestWarn = document.getElementById('longest-fl-warn-icon');
+  
+  if (longestEp > personalEpLimit) {
+    outLong.style.color = 'var(--text-warn)';
+    outLong.style.textShadow = '0 0 12px rgba(255, 167, 0, 0.15)';
+    if (longestWarn) {
+      longestWarn.style.display = 'flex';
+      const warningMsg = 'This eyepiece focal length results in an exit pupil of ' + longestEp.toFixed(1) + 'mm, which exceeds your personal exit pupil limit.';
+      longestWarn.setAttribute('title', warningMsg);
+      const svgTitle = longestWarn.querySelector('svg title');
+      if (svgTitle) {
+        svgTitle.textContent = warningMsg;
+      }
+    }
+  } else {
+    outLong.style.color = '';
+    outLong.style.textShadow = '';
+    if (longestWarn) {
+      longestWarn.style.display = 'none';
+    }
+  }
 
   let rows = '';
   fls.forEach((fl, i) => {
@@ -2285,7 +2400,6 @@ flApInput.addEventListener('input', () => {
   render(true);
 });
 document.getElementById('step').addEventListener('input', render);
-
 document.getElementById('epmin').addEventListener('input', render);
 document.getElementById('epmax').addEventListener('input', render);
 document.getElementById('personal-ep-limit').addEventListener('input', render);
