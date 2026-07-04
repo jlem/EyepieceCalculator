@@ -17,10 +17,10 @@ const DEFAULT_INPUTS: CalculatorInputs = {
   minLimitMode: 'ep',
   maxLimitMode: 'ep',
   epTrans: 2.0,
-  lowStrategy: 'percent',
-  lowStep: 40,
+  lowStrategy: 'fixed',
+  lowStep: 50,
   highStrategy: 'pupil',
-  highStep: 0.50,
+  highStep: 1.00,
 };
 
 export function useHashState() {
@@ -62,10 +62,10 @@ export function useHashState() {
       const stepVal = parseFloat(params.get('step') || '40');
 
       const epTrans = parseFloat(params.get('trans') || '2.0');
-      const lowStrategy = (params.get('lstrat') || 'percent') as CalculatorInputs['lowStrategy'];
-      const lowStep = parseFloat(params.get('lstep') || '40');
+      const lowStrategy = (params.get('lstrat') || 'fixed') as CalculatorInputs['lowStrategy'];
+      const lowStep = parseFloat(params.get('lstep') || '50');
       const highStrategy = (params.get('hstrat') || 'pupil') as CalculatorInputs['highStrategy'];
-      const highStep = parseFloat(params.get('hstep') || '0.50');
+      const highStep = parseFloat(params.get('hstep') || '1.00');
 
       return {
         fratio: fr,

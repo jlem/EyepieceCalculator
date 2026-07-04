@@ -1,0 +1,111 @@
+.formulas {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+}
+
+.formulas summary {
+  list-style: none;
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+}
+
+.formulas summary::-webkit-details-marker {
+  display: none;
+}
+
+.formulas summary h2 {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.15s ease;
+}
+
+.formulas summary h2::before {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-right: 1.5px solid var(--text-muted);
+  border-bottom: 1.5px solid var(--text-muted);
+  transform: rotate(-45deg);
+  transition: transform 0.15s ease, border-color 0.15s ease;
+  margin-bottom: 1px;
+}
+
+.formulas[open] summary h2::before {
+  transform: rotate(45deg);
+}
+
+.formulas summary:hover h2 {
+  color: var(--text-secondary);
+}
+
+.formulas summary:hover h2::before {
+  border-color: var(--text-secondary);
+}
+
+.formulasBody {
+  margin-top: 16px;
+}
+
+.formulaGroup {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.formulaGroup:last-child {
+  margin-bottom: 0;
+}
+
+.formulaGroup h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 12px;
+}
+
+.formulaLatex {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin: 12px 0;
+  display: flex;
+  justify-content: center;
+  overflow-x: auto;
+  background: transparent;
+  padding: 12px 8px;
+  border-radius: 6px;
+  border: none;
+}
+
+.formulaLegend {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.65;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.legendItem {
+  margin-bottom: 4px;
+}
+
+.legendItem:last-child {
+  margin-bottom: 0;
+}
+
+.var {
+  color: var(--accent);
+  font-weight: 600;
+  font-style: italic;
+}

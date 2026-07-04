@@ -9,6 +9,9 @@ import { AdvancedStrategyCard } from './components/AdvancedStrategyCard';
 import { StatsSummary } from './components/StatsSummary';
 import { EyepieceTable } from './components/EyepieceTable';
 import { ChartsContainer } from './components/ChartsContainer';
+import { AppHeader } from './components/AppHeader';
+import { ShareModal } from './components/ShareModal';
+import { FormulaReference } from './components/Formulas/FormulaReference';
 import { CalculatorInputs } from './utils/types';
 import { Telescope } from './models/Telescope';
 
@@ -26,7 +29,6 @@ export default function App() {
 
   // Modal share link visibility state
   const [shareModalOpen, setShareModalOpen] = useState(false);
-  const [copyButtonText, setCopyButtonText] = useState('Copy Link');
 
   // Input change handler supporting limit enforcement clamps
   const handleInputChange = <K extends keyof CalculatorInputs>(
@@ -138,11 +140,10 @@ export default function App() {
     return calculateEyepieceSet(inputs);
   }, [inputs]);
 
-  // Share link handler
+  // Share link handlers
   const handleShareClick = () => {
     enableHashUpdate();
     setShareModalOpen(true);
-    setCopyButtonText('Copy Link');
   };
 
   const getShareUrl = () => {
@@ -185,46 +186,30 @@ export default function App() {
     return window.location.origin + window.location.pathname + '#' + params.toString();
   };
 
-  const handleCopyLink = () => {
-    const url = getShareUrl();
-    navigator.clipboard.writeText(url).then(() => {
-      setCopyButtonText('Copied!');
-      setTimeout(() => setCopyButtonText('Copy Link'), 2000);
+  const handleToggleRange = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setPupilRangeOpen((prev) => {
+      const next = !prev;
+      if (next) {
+        setTimeout(() => {
+          const minEl = document.getElementById('epmin');
+          if (minEl) {
+            minEl.focus();
+            minEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 0);
+      }
+      return next;
     });
   };
 
   return (
     <main>
-      <h1>Eyepiece set calculator</h1>
-      <p className="subtitle">
-        Find out how many eyepieces you need to cover a{' '}
-        <button
-          type="button"
-          id="desc-range-link"
-          className="desc-link"
-          onClick={(e) => {
-            e.preventDefault();
-            setPupilRangeOpen((prev) => {
-              const next = !prev;
-              if (next) {
-                setTimeout(() => {
-                  const minEl = document.getElementById('epmin');
-                  if (minEl) {
-                    minEl.focus();
-                    minEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  }
-                }, 0);
-              }
-              return next;
-            });
-          }}
-        >
-          <span id="desc-range">
-            {inputs.epMin.toFixed(1)}-{inputs.epMax.toFixed(1)}mm
-          </span>
-        </button>{' '}
-        exit pupil range for a given telescope focal ratio, and desired step size approach.
-      </p>
+      <AppHeader
+        epMin={inputs.epMin}
+        epMax={inputs.epMax}
+        onToggleRange={handleToggleRange}
+      />
 
       <div className="app-layout">
         {/* Left Panel: Inputs and List Grid */}
@@ -315,71 +300,8 @@ export default function App() {
             hasFlength={hasFlength}
           />
 
-          {/* KaTeX formulas reference guide */}
-          <details className="formulas">
-            <summary>
-              <h2>Formula Reference</h2>
-            </summary>
-            <div className="formulas-body">
-              <div className="formula-group">
-                <h3>Percent Step Mode</h3>
-                <div className="formula-latex">
-                  {`\\[ {\\color{#ea9991} N} = \\left\\lceil \\frac{\\ln({\\color{#ea9991} {EP}_{\\text{max}}} / {\\color{#ea9991} {EP}_{\\text{min}}})}{\\ln\\left(1 + \\frac{{\\color{#ea9991} Step\\%}}{100}\\right)} \\right\\rceil + 1 \\]`}
-                </div>
-                <p className="formula-legend">
-                  Where:<br />
-                  • <strong className="var">N</strong> is the recommended quantity of eyepieces in your set.<br />
-                  • <strong className="var">EP_max</strong> and <strong className="var">EP_min</strong> are the maximum and minimum exit pupil inputs.<br />
-                  • <strong className="var">Step%</strong> is the magnification step size percentage.<br />
-                  • <strong>⌈...⌉</strong> denotes the ceiling function (rounding up to the next integer).
-                </p>
-              </div>
-
-              <div className="formula-group">
-                <h3>Percent Brightness Step Mode</h3>
-                <div className="formula-latex">
-                  {`\\[ {\\color{#ea9991} N} = \\left\\lceil \\frac{\\ln({\\color{#ea9991} {EP}_{\\text{max}}} / {\\color{#ea9991} {EP}_{\\text{min}}})}{\\ln\\left(\\sqrt{1 + \\frac{{\\color{#ea9991} Step\\%}}{100}}\\right)} \\right\\rceil + 1 \\]`}
-                </div>
-                <p className="formula-legend">
-                  Where:<br />
-                  • <strong className="var">N</strong> is the recommended quantity of eyepieces in your set.<br />
-                  • <strong className="var">EP_max</strong> and <strong className="var">EP_min</strong> are the maximum and minimum exit pupil inputs.<br />
-                  • <strong className="var">Step%</strong> is the brightness step size percentage.<br />
-                  • <strong>⌈...⌉</strong> denotes the ceiling function (rounding up to the next integer).
-                </p>
-              </div>
-
-              <div className="formula-group">
-                <h3>Fixed Magnification Step Mode</h3>
-                <div className="formula-latex">
-                  {`\\[ {\\color{#ea9991} N} = \\left\\lceil \\frac{\\frac{{\\color{#ea9991} F_l}}{{\\color{#ea9991} {EP}_{\\text{min}}} \\times {\\color{#ea9991} F_r}} - \\frac{{\\color{#ea9991} F_l}}{{\\color{#ea9991} {EP}_{\\text{max}}} \\times {\\color{#ea9991} F_r}}}{{\\color{#ea9991} Step}} \\right\\rceil + 1 \\]`}
-                </div>
-                <p className="formula-legend">
-                  Where:<br />
-                  • <strong className="var">N</strong> is the recommended quantity of eyepieces in your set.<br />
-                  • <strong className="var">F_l</strong> is the telescope focal length.<br />
-                  • <strong className="var">F_r</strong> is the telescope focal ratio.<br />
-                  • <strong className="var">EP_max</strong> and <strong className="var">EP_min</strong> are the maximum and minimum exit pupil inputs.<br />
-                  • <strong className="var">Step</strong> is the desired magnification step size (e.g. 40x).<br />
-                  • <strong>⌈...⌉</strong> denotes the ceiling function (rounding up to the next integer).
-                </p>
-              </div>
-
-              <div className="formula-group">
-                <h3>Fixed Exit Pupil Step Mode</h3>
-                <div className="formula-latex">
-                  {`\\[ {\\color{#ea9991} N} = \\left\\lceil \\frac{{\\color{#ea9991} {EP}_{\\text{max}}} - {\\color{#ea9991} {EP}_{\\text{min}}}}{{\\color{#ea9991} Step}} \\right\\rceil + 1 \\]`}
-                </div>
-                <p className="formula-legend">
-                  Where:<br />
-                  • <strong className="var">N</strong> is the recommended quantity of eyepieces in your set.<br />
-                  • <strong className="var">EP_max</strong> and <strong className="var">EP_min</strong> are the maximum and minimum exit pupil inputs.<br />
-                  • <strong className="var">Step</strong> is the desired exit pupil step size (in mm).<br />
-                  • <strong>⌈...⌉</strong> denotes the ceiling function (rounding up to the next integer).
-                </p>
-              </div>
-            </div>
-          </details>
+          {/* Formulas reference guide */}
+          <FormulaReference />
         </div>
 
         {/* Right Panel: Charts Container */}
@@ -395,30 +317,12 @@ export default function App() {
         Inspired by Don Pensack (Starman1) and his invaluable insights and contributions to the amateur astronomy community. Thank you, Don!
       </footer>
 
-      {/* Shareable URL Link Modal Overlay */}
-      {shareModalOpen && (
-        <div className="modal-overlay" onClick={() => setShareModalOpen(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3>Share Configuration</h3>
-            <p>Copy the link below to share your eyepiece set calculator configuration:</p>
-            <div className="share-input-group">
-              <input
-                type="text"
-                id="share-url-input"
-                readOnly
-                value={getShareUrl()}
-                onClick={(e) => (e.target as HTMLInputElement).select()}
-              />
-              <button type="button" id="copy-btn" onClick={handleCopyLink}>
-                {copyButtonText}
-              </button>
-              <button type="button" id="close-btn" onClick={() => setShareModalOpen(false)}>
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Share Link Modal popup */}
+      <ShareModal
+        isOpen={shareModalOpen}
+        shareUrl={getShareUrl()}
+        onClose={() => setShareModalOpen(false)}
+      />
     </main>
   );
 }

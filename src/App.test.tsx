@@ -46,4 +46,36 @@ describe('App Layout Component', () => {
     expect(screen.getByText('Eyepieces needed')).toBeInTheDocument();
     expect(container.querySelector('#out-count')).toHaveTextContent('—');
   });
+
+  it('should default low range strategy to Fixed Mag (50x) in advanced setup mode', () => {
+    const { container } = render(<App />);
+
+    // Click Advanced Setup tab
+    fireEvent.click(screen.getByText('Advanced Setup'));
+
+    // Check low range card strategy and step output defaults
+    const lowStrategySelect = container.querySelector('#adv-strategy-card-low') as HTMLSelectElement;
+    expect(lowStrategySelect).toBeInTheDocument();
+    expect(lowStrategySelect.value).toBe('fixed');
+
+    const lowStepOutput = container.querySelector('#adv-step-out-card-low') as HTMLSpanElement;
+    expect(lowStepOutput).toBeInTheDocument();
+    expect(lowStepOutput).toHaveTextContent('50x');
+  });
+
+  it('should default high range strategy to Fixed Pupil (1.00mm) in advanced setup mode', () => {
+    const { container } = render(<App />);
+
+    // Click Advanced Setup tab
+    fireEvent.click(screen.getByText('Advanced Setup'));
+
+    // Check high range card strategy and step output defaults
+    const highStrategySelect = container.querySelector('#adv-strategy-card-high') as HTMLSelectElement;
+    expect(highStrategySelect).toBeInTheDocument();
+    expect(highStrategySelect.value).toBe('pupil');
+
+    const highStepOutput = container.querySelector('#adv-step-out-card-high') as HTMLSpanElement;
+    expect(highStepOutput).toBeInTheDocument();
+    expect(highStepOutput).toHaveTextContent('1.00mm');
+  });
 });
