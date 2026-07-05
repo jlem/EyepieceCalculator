@@ -1,22 +1,20 @@
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
 import { AppHeader } from './AppHeader';
 
 describe('AppHeader Component', () => {
-  it('should render title and exit pupil range subtitle link', () => {
-    const handleToggle = vi.fn();
-    render(<AppHeader epMin={0.5} epMax={7.0} onToggleRange={handleToggle} />);
+  it('should render title and subtitle', () => {
+    render(<AppHeader />);
 
     // Check title renders
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Eyepiece set calculator');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Eyepiece Planner');
 
-    // Check link contains correct range text
-    const link = screen.getByRole('button');
-    expect(link).toHaveTextContent('0.5-7.0mm');
-
-    // Click link and assert callback fires
-    fireEvent.click(link);
-    expect(handleToggle).toHaveBeenCalled();
+    // Check subtitle renders
+    expect(
+      screen.getByText(
+        /Enter information about a telescope you want to create an eyepiece plan for/
+      )
+    ).toBeInTheDocument();
   });
 });

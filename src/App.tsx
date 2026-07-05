@@ -9,9 +9,117 @@ import { DatabaseTab } from './components/DatabaseTab';
 import { RecommendationsTab } from './components/RecommendationsTab';
 import { PlannerTab } from './components/PlannerTab';
 import { CalculatorInputs } from './utils/types';
+import { TelescopeTabs } from './components/TelescopeTabs';
+import { TelescopeModal } from './components/TelescopeModal';
 
 export default function App() {
   const [inputs, setInputs, mainTab, setMainTab, enableHashUpdate] = useHashState();
+
+  // Telescope Manager State
+  const [savedTelescopes, setSavedTelescopes] = useState<Telescope[]>(() => {
+    const raw = localStorage.getItem('saved_telescopes');
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw) as any[];
+        return parsed.map(
+          (p) => new Telescope(p.id, p.name, p.aperture, p.focalLength, p.focalRatio, p.focuserSize)
+        );
+      } catch {
+        // fallback
+      }
+    }
+    const defaults = [
+      new Telescope('tele_default_1', '8" Dobsonian', 200, 1200, 6, '2'),
+      new Telescope('tele_default_2', '80mm Refractor', 80, 600, 7.5, '2'),
+      new Telescope('tele_default_3', '127mm Mak-Cas', 127, 1500, 11.8, '1.25'),
+    ];
+    localStorage.setItem('saved_telescopes', JSON.stringify(defaults));
+    return defaults;
+  });
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [telescopeToEdit, setTelescopeToEdit] = useState<Telescope | null>(null);
+
+  const saveTelescopes = (list: Telescope[]) => {
+    setSavedTelescopes(list);
+    localStorage.setItem('saved_telescopes', JSON.stringify(list));
+  };
+
+  const activeTelescopeId = useMemo(() => {
+    const inputAp = parseFloat(inputs.apertureVal) || 0;
+    const inputApMM = inputs.apertureUnit === 'in' ? inputAp * 25.4 : inputAp;
+    const inputFL = inputs.inputMode === 'fl'
+      ? (parseFloat(inputs.flengthVal) || 0)
+      : (inputApMM * inputs.fratio);
+
+    const match = savedTelescopes.find(t => {
+      const flDiff = Math.abs(t.focalLength - inputFL);
+      const apDiff = Math.abs(t.aperture - inputApMM);
+      const frDiff = Math.abs(t.focalRatio - inputs.fratio);
+      return flDiff < 0.5 && apDiff < 0.5 && frDiff < 0.05;
+    });
+
+    return match ? match.id : null;
+  }, [inputs, savedTelescopes]);
+
+  const handleSelectTelescope = (id: string | null) => {
+    if (id === null) return;
+    const t = savedTelescopes.find(x => x.id === id);
+    if (t) {
+      setInputs((prev) => {
+        const next = {
+          ...prev,
+          fratio: t.focalRatio,
+          inputMode: 'fl' as const,
+          flengthVal: t.focalLength.toString(),
+          apertureVal: t.aperture.toString(),
+          apertureUnit: 'mm' as const,
+        };
+        if (next.enforceLimit && next.epMax > next.personalEpLimit) {
+          next.epMax = next.personalEpLimit;
+          setMaxEnforced(true);
+          if (maxEnforceTimeoutRef.current) clearTimeout(maxEnforceTimeoutRef.current);
+          maxEnforceTimeoutRef.current = setTimeout(() => setMaxEnforced(false), 2000);
+        }
+        return next;
+      });
+    }
+  };
+
+  const handleSaveTelescope = (t: Telescope) => {
+    const exists = savedTelescopes.some(x => x.id === t.id);
+    let nextList: Telescope[];
+    if (exists) {
+      nextList = savedTelescopes.map(x => x.id === t.id ? t : x);
+    } else {
+      nextList = [...savedTelescopes, t];
+    }
+    saveTelescopes(nextList);
+    
+    // Select the telescope by copying its values directly, using the newly saved telescope object
+    setInputs((prev) => {
+      const next = {
+        ...prev,
+        fratio: t.focalRatio,
+        inputMode: 'fl' as const,
+        flengthVal: t.focalLength.toString(),
+        apertureVal: t.aperture.toString(),
+        apertureUnit: 'mm' as const,
+      };
+      if (next.enforceLimit && next.epMax > next.personalEpLimit) {
+        next.epMax = next.personalEpLimit;
+        setMaxEnforced(true);
+        if (maxEnforceTimeoutRef.current) clearTimeout(maxEnforceTimeoutRef.current);
+        maxEnforceTimeoutRef.current = setTimeout(() => setMaxEnforced(false), 2000);
+      }
+      return next;
+    });
+  };
+
+  const handleDeleteTelescope = (id: string) => {
+    const nextList = savedTelescopes.filter(x => x.id !== id);
+    saveTelescopes(nextList);
+  };
 
   // Transient limit-enforced overlays state
   const [minEnforced, setMinEnforced] = useState(false);
@@ -115,7 +223,8 @@ export default function App() {
       const apMM = inputs.apertureUnit === 'in' ? ap * 25.4 : ap;
       flength = apMM * inputs.fratio;
     }
-    return flength > 0 ? new Telescope(flength, inputs.fratio, false) : null;
+    const aperture = inputs.fratio > 0 ? flength / inputs.fratio : 0;
+    return flength > 0 ? new Telescope('', 'Custom', aperture, flength, inputs.fratio, '2') : null;
   }, [inputs.inputMode, inputs.flengthVal, inputs.apertureVal, inputs.apertureUnit, inputs.fratio]);
 
   const hasFlength = !!telescope;
@@ -200,10 +309,21 @@ export default function App() {
 
   return (
     <main>
-      <AppHeader
-        epMin={inputs.epMin}
-        epMax={inputs.epMax}
-        onToggleRange={handleToggleRange}
+      <AppHeader />
+
+      <TelescopeTabs
+        telescopes={savedTelescopes}
+        activeTelescopeId={activeTelescopeId}
+        onSelect={handleSelectTelescope}
+        onEdit={(t) => {
+          setTelescopeToEdit(t);
+          setModalOpen(true);
+        }}
+        onDelete={handleDeleteTelescope}
+        onAddClick={() => {
+          setTelescopeToEdit(null);
+          setModalOpen(true);
+        }}
       />
 
       <MainNavTabs
@@ -242,6 +362,14 @@ export default function App() {
         isOpen={shareModalOpen}
         shareUrl={getShareUrl()}
         onClose={() => setShareModalOpen(false)}
+      />
+
+      {/* Telescope Form Modal popup */}
+      <TelescopeModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSave={handleSaveTelescope}
+        telescopeToEdit={telescopeToEdit}
       />
     </main>
   );

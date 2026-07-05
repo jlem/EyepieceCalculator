@@ -1,29 +1,11 @@
 import React from 'react';
-import styles from './AppHeader.module.css';
 
-interface AppHeaderProps {
-  epMin: number;
-  epMax: number;
-  onToggleRange: (e: React.MouseEvent) => void;
-}
-
-export const AppHeader: React.FC<AppHeaderProps> = ({ epMin, epMax, onToggleRange }) => {
+export const AppHeader: React.FC = () => {
   return (
     <>
-      <h1>Eyepiece set calculator</h1>
+      <h1>Eyepiece Planner</h1>
       <p className="subtitle">
-        Find out how many eyepieces you need to cover a{' '}
-        <button
-          type="button"
-          id="desc-range-link"
-          className={styles.descLink}
-          onClick={onToggleRange}
-        >
-          <span id="desc-range">
-            {epMin.toFixed(1)}-{epMax.toFixed(1)}mm
-          </span>
-        </button>{' '}
-        exit pupil range for a given telescope focal ratio, and desired step size approach.
+        Enter information about a telescope you want to create an eyepiece plan for, and then use the calculator in the planner to generate some recommendations.
       </p>
     </>
   );

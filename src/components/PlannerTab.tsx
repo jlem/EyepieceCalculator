@@ -71,6 +71,42 @@ export const PlannerTab: React.FC<PlannerTabProps> = ({
             }}
           />
 
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
+            <button
+              type="button"
+              id="desc-range-link"
+              onClick={(e) => {
+                e.preventDefault();
+                setPupilRangeOpen((prev) => {
+                  const next = !prev;
+                  if (next) {
+                    setTimeout(() => {
+                      const minEl = document.getElementById('epmin');
+                      if (minEl) {
+                        minEl.focus();
+                        minEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }
+                    }, 0);
+                  }
+                  return next;
+                });
+              }}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                color: 'var(--accent)',
+                textDecoration: 'underline',
+                textDecorationStyle: 'dotted',
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+                outline: 'none',
+              }}
+            >
+              {pupilRangeOpen ? 'Hide exit pupil limits' : 'Customize exit pupil limits'}
+            </button>
+          </div>
+
           {/* Exit Pupil Ranges (Always directly below controls) */}
           <PersonalLimitControls
             inputs={inputs}

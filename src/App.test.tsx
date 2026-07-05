@@ -8,7 +8,7 @@ describe('App Layout Component', () => {
     render(<App />);
 
     // Check header
-    expect(screen.getByText('Eyepiece set calculator')).toBeInTheDocument();
+    expect(screen.getByText('Eyepiece Planner')).toBeInTheDocument();
 
     // Check simple controls are rendered
     expect(screen.getByLabelText('Focal ratio (f/#)')).toBeInTheDocument();
@@ -170,5 +170,26 @@ describe('App Layout Component', () => {
 
     // Clean up
     window.history.replaceState(null, '', '/planner');
+  });
+
+  it('should leverage localStorage to load and save telescopes', () => {
+    // 1. Pre-populate localStorage with custom mock telescopes
+    const mockTelescopes = [
+      { id: 'tele_mock_1', name: 'Mock Dobsonian', aperture: 250, focalLength: 1250, focalRatio: 5, focuserSize: '2' }
+    ];
+    localStorage.setItem('saved_telescopes', JSON.stringify(mockTelescopes));
+
+    const { container } = render(<App />);
+
+    // 2. Mock telescope should be rendered as a tab
+    expect(screen.getByText('Mock Dobsonian')).toBeInTheDocument();
+
+    // 3. Select Mock Dobsonian and assert input updates
+    fireEvent.click(screen.getByText('Mock Dobsonian'));
+    expect(screen.getByLabelText('Focal ratio (f/#)')).toHaveValue(5);
+    expect(container.querySelector('#fl-ap-input')).toHaveValue('1250');
+
+    // Clean up
+    localStorage.removeItem('saved_telescopes');
   });
 });

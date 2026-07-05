@@ -5,7 +5,7 @@ import { EyepieceCalculation } from '../models/EyepieceCalculation';
 
 describe('EyepieceCalculation Model', () => {
   it('should calculate exit pupil and magnification correctly', () => {
-    const scope = new Telescope(1000, 10, false); // 1000mm focal length, f/10
+    const scope = new Telescope('', 'Test', 100, 1000, 10, '2'); // 1000mm focal length, f/10
     const eyepiece = new Eyepiece(20);             // 20mm eyepiece
     const calc = new EyepieceCalculation(eyepiece, scope);
 

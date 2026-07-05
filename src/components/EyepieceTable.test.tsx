@@ -16,7 +16,7 @@ describe('EyepieceTable Component', () => {
   });
 
   it('should render eyepiece rows and respond to sort clicks', () => {
-    const tel = new Telescope(1000, 5);
+    const tel = new Telescope('', 'Test', 200, 1000, 5, '2');
     const ep1 = new Eyepiece(10);
     const ep2 = new Eyepiece(20);
     const set = new EyepieceSet([

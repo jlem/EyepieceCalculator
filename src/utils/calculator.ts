@@ -97,7 +97,8 @@ export function calculateEyepieceSet(inputs: CalculatorInputs): EyepieceSet {
     flength = apMM * fratio;
   }
 
-  const telescope = new Telescope(flength, fratio, false);
+  const aperture = fratio > 0 ? flength / fratio : 0;
+  const telescope = new Telescope('', 'Custom', aperture, flength, fratio, '2');
 
   let eps: number[] = [];
   let fls: number[] = [];

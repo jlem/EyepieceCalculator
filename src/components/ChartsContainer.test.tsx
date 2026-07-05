@@ -26,7 +26,7 @@ describe('ChartsContainer Component', () => {
 
   it('should render charts and magnification placeholder link when focal length is missing', () => {
     const handleFocus = vi.fn();
-    const tel = new Telescope(1000, 5); // we won't supply focal length flag
+    const tel = new Telescope('', 'Test', 200, 1000, 5, '2');
     const ep1 = new Eyepiece(10);
     const ep2 = new Eyepiece(20);
     const set = new EyepieceSet([

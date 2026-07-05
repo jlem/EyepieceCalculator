@@ -5,7 +5,7 @@ import { EyepieceCalculation } from '../models/EyepieceCalculation';
 import { EyepieceSet } from '../models/EyepieceSet';
 
 describe('EyepieceSet Model', () => {
-  const scope = new Telescope(1000, 10, false);
+  const scope = new Telescope('', 'Test', 100, 1000, 10, '2');
   const calcs = [
     new EyepieceCalculation(new Eyepiece(30), scope), // 30mm (3mm ep, 33.3x mag)
     new EyepieceCalculation(new Eyepiece(10), scope), // 10mm (1mm ep, 100x mag)
