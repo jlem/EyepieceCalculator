@@ -1,22 +1,17 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useHashState } from './hooks/useHashState';
 import { calculateEyepieceSet } from './utils/calculator';
-import { SetupTabs } from './components/SetupTabs';
-import { TelescopeInputs } from './components/TelescopeInputs';
-import { PersonalLimitControls } from './components/PersonalLimitControls';
-import { AdvancedTransitionSlider } from './components/AdvancedTransitionSlider';
-import { AdvancedStrategyCard } from './components/AdvancedStrategyCard';
-import { StatsSummary } from './components/StatsSummary';
-import { EyepieceTable } from './components/EyepieceTable';
-import { ChartsContainer } from './components/ChartsContainer';
 import { AppHeader } from './components/AppHeader';
 import { ShareModal } from './components/ShareModal';
-import { FormulaReference } from './components/Formulas/FormulaReference';
-import { CalculatorInputs } from './utils/types';
 import { Telescope } from './models/Telescope';
+import { MainNavTabs } from './components/MainNavTabs';
+import { DatabaseTab } from './components/DatabaseTab';
+import { RecommendationsTab } from './components/RecommendationsTab';
+import { PlannerTab } from './components/PlannerTab';
+import { CalculatorInputs } from './utils/types';
 
 export default function App() {
-  const [inputs, setInputs, enableHashUpdate] = useHashState();
+  const [inputs, setInputs, mainTab, setMainTab, enableHashUpdate] = useHashState();
 
   // Transient limit-enforced overlays state
   const [minEnforced, setMinEnforced] = useState(false);
@@ -97,15 +92,6 @@ export default function App() {
     handleInputChange('apertureUnit', nextUnit);
   };
 
-  // Focus utility for chart placeholder link
-  const focusTelescopeInput = () => {
-    const input = document.getElementById('fl-ap-input');
-    if (input) {
-      input.focus();
-      input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  };
-
   // Trigger KaTeX parsing when App mounts
   useEffect(() => {
     if ((window as any).renderMathInElement) {
@@ -148,6 +134,7 @@ export default function App() {
 
   const getShareUrl = () => {
     const params = new URLSearchParams();
+    params.set('tab', 'planner');
     params.set('fr', inputs.fratio.toString());
     params.set('mode', inputs.inputMode);
     
@@ -203,6 +190,14 @@ export default function App() {
     });
   };
 
+  const focusTelescopeInput = () => {
+    const input = document.getElementById('fl-ap-input');
+    if (input) {
+      input.focus();
+      input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
   return (
     <main>
       <AppHeader
@@ -211,107 +206,32 @@ export default function App() {
         onToggleRange={handleToggleRange}
       />
 
-      <div className="app-layout">
-        {/* Left Panel: Inputs and List Grid */}
-        <div className="left-panel">
-          <div className="setup-box">
-            <SetupTabs
-              activeTab={inputs.stepModeType}
-              onChange={(tab) => {
-                handleInputChange('stepModeType', tab);
-                setPupilRangeOpen(tab === 'advanced');
-              }}
-              onShare={handleShareClick}
-            />
+      <MainNavTabs
+        activeTab={mainTab}
+        onChange={(tab) => setMainTab(tab)}
+      />
 
-            {/* Telescope Specs */}
-            <TelescopeInputs
-              inputs={inputs}
-              onChange={(key, value) => {
-                if (key === 'inputMode') {
-                  handleInputModeToggle(value as any);
-                } else if (key === 'apertureUnit') {
-                  handleApertureUnitToggle(value as any);
-                } else {
-                  handleInputChange(key, value);
-                }
-              }}
-            />
+      {mainTab === 'database' && <DatabaseTab />}
 
-            {/* Exit Pupil Ranges (Always directly below controls) */}
-            <PersonalLimitControls
-              inputs={inputs}
-              isOpen={pupilRangeOpen}
-              minEnforcedActive={minEnforced}
-              maxEnforcedActive={maxEnforced}
-              onChange={handleInputChange}
-            />
+      {mainTab === 'recommendations' && <RecommendationsTab />}
 
-            {/* Advanced Configurations Slider & Cards */}
-            {inputs.stepModeType === 'advanced' && (
-              <div id="advanced-step-container" className="advanced-step-container">
-                <AdvancedTransitionSlider
-                  epMin={inputs.epMin}
-                  epMax={inputs.epMax}
-                  epTrans={inputs.epTrans}
-                  onChange={(val) => handleInputChange('epTrans', val)}
-                />
-                <div className="adv-cards-grid">
-                  <AdvancedStrategyCard
-                    cardId="card-low"
-                    title={`Low Range (${inputs.epMin.toFixed(1)}mm → ${inputs.epTrans.toFixed(1)}mm)`}
-                    strategy={inputs.lowStrategy}
-                    step={inputs.lowStep}
-                    isFlengthProvided={hasFlength}
-                    onStrategyChange={(val) => handleInputChange('lowStrategy', val)}
-                    onStepChange={(val) => handleInputChange('lowStep', val)}
-                  />
-                  <AdvancedStrategyCard
-                    cardId="card-high"
-                    title={`High Range (${inputs.epTrans.toFixed(1)}mm → ${inputs.epMax.toFixed(1)}mm)`}
-                    strategy={inputs.highStrategy}
-                    step={inputs.highStep}
-                    isFlengthProvided={hasFlength}
-                    onStrategyChange={(val) => handleInputChange('highStrategy', val)}
-                    onStepChange={(val) => handleInputChange('highStep', val)}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Stats summary boxes */}
-          <StatsSummary
-            count={eyepieceSet ? eyepieceSet.count : null}
-            shortestFL={eyepieceSet ? eyepieceSet.shortestFL : null}
-            longestFL={eyepieceSet ? eyepieceSet.longestFL : null}
-            longestEp={
-              eyepieceSet && eyepieceSet.calculations.length > 0
-                ? eyepieceSet.calculations[eyepieceSet.calculations.length - 1].exitPupil
-                : null
-            }
-            personalEpLimit={inputs.personalEpLimit}
-          />
-
-          {/* Eyepiece Grid Table */}
-          <EyepieceTable
-            eyepieceSet={eyepieceSet}
-            personalEpLimit={inputs.personalEpLimit}
-            hasFlength={hasFlength}
-          />
-
-          {/* Formulas reference guide */}
-          <FormulaReference />
-        </div>
-
-        {/* Right Panel: Charts Container */}
-        <ChartsContainer
-          eyepieceSet={eyepieceSet}
+      {mainTab === 'calculator' && (
+        <PlannerTab
+          inputs={inputs}
+          onChange={handleInputChange}
+          onInputModeToggle={handleInputModeToggle}
+          onApertureUnitToggle={handleApertureUnitToggle}
+          onShareClick={handleShareClick}
+          minEnforced={minEnforced}
+          maxEnforced={maxEnforced}
+          pupilRangeOpen={pupilRangeOpen}
+          setPupilRangeOpen={setPupilRangeOpen}
           telescope={telescope}
           hasFlength={hasFlength}
-          onFocusTelescopeInput={focusTelescopeInput}
+          eyepieceSet={eyepieceSet}
+          focusTelescopeInput={focusTelescopeInput}
         />
-      </div>
+      )}
 
       <footer className="app-footer">
         Inspired by Don Pensack (Starman1) and his invaluable insights and contributions to the amateur astronomy community. Thank you, Don!

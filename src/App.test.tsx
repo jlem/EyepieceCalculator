@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import App from './App';
 
 describe('App Layout Component', () => {
@@ -77,5 +77,98 @@ describe('App Layout Component', () => {
     const highStepOutput = container.querySelector('#adv-step-out-card-high') as HTMLSpanElement;
     expect(highStepOutput).toBeInTheDocument();
     expect(highStepOutput).toHaveTextContent('1.00mm');
+  });
+
+  it('should render top-level main navigation tabs', () => {
+    render(<App />);
+    expect(screen.getByText('Eyepiece Database')).toBeInTheDocument();
+    expect(screen.getByText('Planner')).toBeInTheDocument();
+    expect(screen.getByText('Recommendations')).toBeInTheDocument();
+  });
+
+  it('should default to Planner tab and switch tabs when clicked and update pathname', () => {
+    window.history.replaceState(null, '', '/planner');
+    render(<App />);
+    
+    // Planner is active by default (e.g. telescope controls are visible)
+    expect(screen.getByLabelText('Focal ratio (f/#)')).toBeInTheDocument();
+    expect(screen.queryByTestId('database-tab')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('recommendations-tab')).not.toBeInTheDocument();
+
+    // Click Eyepiece Database tab
+    fireEvent.click(screen.getByText('Eyepiece Database'));
+
+    // Database tab placeholder should be visible, planner should be hidden
+    expect(window.location.pathname).toBe('/database');
+    expect(screen.getByTestId('database-tab')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Focal ratio (f/#)')).not.toBeInTheDocument();
+
+    // Click Recommendations tab
+    fireEvent.click(screen.getByText('Recommendations'));
+
+    // Recommendations tab placeholder should be visible, database should be hidden
+    expect(window.location.pathname).toBe('/recommendations');
+    expect(screen.getByTestId('recommendations-tab')).toBeInTheDocument();
+    expect(screen.queryByTestId('database-tab')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Focal ratio (f/#)')).not.toBeInTheDocument();
+
+    // Click Planner tab again
+    fireEvent.click(screen.getByText('Planner'));
+
+    // Planner is back
+    expect(window.location.pathname).toBe('/planner');
+    expect(screen.getByLabelText('Focal ratio (f/#)')).toBeInTheDocument();
+
+    // Clean up
+    window.history.replaceState(null, '', '/planner');
+  });
+
+  it('should load Database tab directly if URL pathname is /database', () => {
+    window.history.replaceState(null, '', '/database');
+    render(<App />);
+    expect(screen.getByTestId('database-tab')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Focal ratio (f/#)')).not.toBeInTheDocument();
+    // Clean up
+    window.history.replaceState(null, '', '/planner');
+  });
+
+  it('should load Recommendations tab directly if URL pathname is /recommendations', () => {
+    window.history.replaceState(null, '', '/recommendations');
+    render(<App />);
+    expect(screen.getByTestId('recommendations-tab')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Focal ratio (f/#)')).not.toBeInTheDocument();
+    // Clean up
+    window.history.replaceState(null, '', '/planner');
+  });
+
+  it('should switch tabs when window popstate event fires', () => {
+    window.history.replaceState(null, '', '/planner');
+    render(<App />);
+    expect(screen.getByLabelText('Focal ratio (f/#)')).toBeInTheDocument();
+
+    // Trigger popstate event programmatically wrapped in act
+    act(() => {
+      window.history.replaceState(null, '', '/database');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+
+    expect(screen.getByTestId('database-tab')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Focal ratio (f/#)')).not.toBeInTheDocument();
+
+    act(() => {
+      window.history.replaceState(null, '', '/recommendations');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+
+    expect(screen.getByTestId('recommendations-tab')).toBeInTheDocument();
+
+    act(() => {
+      window.history.replaceState(null, '', '/planner');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+    expect(screen.getByLabelText('Focal ratio (f/#)')).toBeInTheDocument();
+
+    // Clean up
+    window.history.replaceState(null, '', '/planner');
   });
 });
