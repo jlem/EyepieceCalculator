@@ -6,6 +6,7 @@ interface StatsSummaryProps {
   longestFL: number | null;
   longestEp: number | null;
   personalEpLimit: number;
+  stepModeType?: 'simple' | 'advanced';
 }
 
 export const StatsSummary: React.FC<StatsSummaryProps> = ({
@@ -14,10 +15,11 @@ export const StatsSummary: React.FC<StatsSummaryProps> = ({
   longestFL,
   longestEp,
   personalEpLimit,
+  stepModeType,
 }) => {
   const hasData = count !== null && count > 0;
-  
-  const showWarn = hasData && longestEp !== null && longestEp > personalEpLimit;
+
+  const showWarn = hasData && stepModeType === 'advanced' && longestEp !== null && longestEp > personalEpLimit;
   const warnTooltip = showWarn
     ? `This eyepiece focal length results in an exit pupil of ${longestEp!.toFixed(1)}mm, which exceeds your personal exit pupil limit.`
     : '';

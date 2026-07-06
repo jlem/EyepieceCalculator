@@ -17,9 +17,9 @@ describe('TelescopeModal Component', () => {
 
     expect(screen.getByRole('heading', { name: 'Add Telescope' })).toBeInTheDocument();
     expect(screen.getByTestId('modal-label-input')).toHaveValue('');
-    expect(screen.getByTestId('modal-fratio-input')).toHaveValue(5);
-    expect(screen.getByTestId('modal-flength-input')).toHaveValue(1000);
-    expect(screen.getByTestId('modal-aperture-input')).toHaveValue(200);
+    expect(screen.getByTestId('modal-fratio-input')).toHaveValue(null);
+    expect(screen.getByTestId('modal-flength-input')).toHaveValue(null);
+    expect(screen.getByTestId('modal-aperture-input')).toHaveValue(null);
     expect(screen.getByRole('button', { name: 'mm' })).toHaveClass('active');
     expect(screen.getByTestId('modal-focuser-select')).toHaveValue('2');
   });
@@ -36,6 +36,9 @@ describe('TelescopeModal Component', () => {
 
     const flInput = screen.getByTestId('modal-flength-input');
     const apInput = screen.getByTestId('modal-aperture-input');
+
+    // Set focal ratio to 5 first
+    fireEvent.change(screen.getByTestId('modal-fratio-input'), { target: { value: '5' } });
 
     // Change focal length to 1500 (with focal ratio 5) -> Aperture should be computed as 1500 / 5 = 300
     fireEvent.change(flInput, { target: { value: '1500' } });
@@ -54,6 +57,9 @@ describe('TelescopeModal Component', () => {
 
     const flInput = screen.getByTestId('modal-flength-input');
     const apInput = screen.getByTestId('modal-aperture-input');
+
+    // Set focal ratio to 5 first
+    fireEvent.change(screen.getByTestId('modal-fratio-input'), { target: { value: '5' } });
 
     // Change aperture to 150 (with focal ratio 5) -> Focal length should be computed as 150 * 5 = 750
     fireEvent.change(apInput, { target: { value: '150' } });
@@ -74,7 +80,11 @@ describe('TelescopeModal Component', () => {
     // Enter name
     fireEvent.change(screen.getByTestId('modal-label-input'), { target: { value: 'Inches Scope' } });
 
-    // Current: focalRatio=5, focalLength=1000, aperture=200mm
+    // Populate initial specs: focalRatio=5, focalLength=1000, aperture=200mm
+    fireEvent.change(screen.getByTestId('modal-fratio-input'), { target: { value: '5' } });
+    fireEvent.change(screen.getByTestId('modal-flength-input'), { target: { value: '1000' } });
+    fireEvent.change(screen.getByTestId('modal-aperture-input'), { target: { value: '200' } });
+
     // Click 'in' toggle to switch to inches
     const inButton = screen.getByRole('button', { name: 'in' });
     fireEvent.click(inButton);
@@ -82,8 +92,8 @@ describe('TelescopeModal Component', () => {
     const apInput = screen.getByTestId('modal-aperture-input');
     const flInput = screen.getByTestId('modal-flength-input');
 
-    // Aperture should convert: 200 / 25.4 = 7.87
-    expect(parseFloat(apInput.value)).toBeCloseTo(7.87, 2);
+    // Aperture should convert: 200 / 25.4 = 7.874... which rounds to nearest 10th (7.9)
+    expect(parseFloat(apInput.value)).toBeCloseTo(7.9, 1);
     // Focal length (mm) should remain 1000
     expect(flInput).toHaveValue(1000);
 
@@ -140,6 +150,9 @@ describe('TelescopeModal Component', () => {
     );
 
     fireEvent.change(screen.getByTestId('modal-label-input'), { target: { value: 'My Scope' } });
+    fireEvent.change(screen.getByTestId('modal-fratio-input'), { target: { value: '5' } });
+    fireEvent.change(screen.getByTestId('modal-flength-input'), { target: { value: '1000' } });
+    fireEvent.change(screen.getByTestId('modal-aperture-input'), { target: { value: '200' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save Telescope' }));
 
     expect(handleSave).toHaveBeenCalledTimes(1);
@@ -268,7 +281,11 @@ describe('TelescopeModal Component', () => {
     const flInput = screen.getByTestId('modal-flength-input');
     const apInput = screen.getByTestId('modal-aperture-input');
 
-    // Default: aperture = 200, focalLength = 1000, focalRatio = 5
+    // Populate initial specs: aperture = 200, focalLength = 1000, focalRatio = 5
+    fireEvent.change(frInput, { target: { value: '5' } });
+    fireEvent.change(flInput, { target: { value: '1000' } });
+    fireEvent.change(apInput, { target: { value: '200' } });
+
     // Change focal ratio to 8 -> Focal Length should update to 200 * 8 = 1600, Aperture stays 200
     fireEvent.change(frInput, { target: { value: '8' } });
     expect(apInput).toHaveValue(200);
@@ -309,13 +326,54 @@ describe('TelescopeModal Component', () => {
 
     const labelInput = screen.getByTestId('modal-label-input');
     
-    // Fill telescope label
+    // Fill telescope details
     fireEvent.change(labelInput, { target: { value: 'My Scope' } });
+    fireEvent.change(screen.getByTestId('modal-fratio-input'), { target: { value: '5' } });
+    fireEvent.change(screen.getByTestId('modal-flength-input'), { target: { value: '1000' } });
+    fireEvent.change(screen.getByTestId('modal-aperture-input'), { target: { value: '200' } });
     
     // Press Enter
     fireEvent.keyDown(labelInput, { key: 'Enter', code: 'Enter' });
     
     expect(handleSave).toHaveBeenCalledTimes(1);
     expect(handleClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('should preserve high-precision aperture when toggling units back and forth without losing precision', () => {
+    const handleSave = vi.fn();
+    render(
+      <TelescopeModal
+        isOpen={true}
+        onClose={vi.fn()}
+        onSave={handleSave}
+        telescopeToEdit={null}
+      />
+    );
+
+    const apInput = screen.getByTestId('modal-aperture-input');
+    const inButton = screen.getByRole('button', { name: 'in' });
+    const mmButton = screen.getByRole('button', { name: 'mm' });
+
+    // 1. Enter 610mm
+    fireEvent.change(apInput, { target: { value: '610' } });
+    expect(apInput).toHaveValue(610);
+
+    // 2. Toggle to inches -> should format to 24 (since 610 / 25.4 = 24.0157... which rounds to 24)
+    fireEvent.click(inButton);
+    expect(apInput).toHaveValue(24);
+
+    // 3. Toggle back to mm -> should restore exactly 610 (not 609.6)
+    fireEvent.click(mmButton);
+    expect(apInput).toHaveValue(610);
+
+    // 4. Save and verify that the constructed Telescope has the exact high-precision mm value (610)
+    fireEvent.change(screen.getByTestId('modal-label-input'), { target: { value: 'Test Scope' } });
+    fireEvent.change(screen.getByTestId('modal-fratio-input'), { target: { value: '3' } });
+    fireEvent.change(screen.getByTestId('modal-flength-input'), { target: { value: '1830' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save Telescope' }));
+
+    expect(handleSave).toHaveBeenCalledTimes(1);
+    const savedScope = handleSave.mock.calls[0][0] as Telescope;
+    expect(savedScope.aperture).toBe(610);
   });
 });

@@ -7,11 +7,12 @@ test.describe('Eyepiece Calculator E2E Tests', () => {
     // Check title
     await expect(page.locator('h1')).toHaveText('Eyepiece Planner');
 
-    // Check simple controls are rendered
-    await expect(page.locator('#fratio')).toHaveValue('5');
-    await expect(page.locator('#fl-ap-input')).toHaveValue('1000');
+    // Check exit pupil controls are rendered (not telescope spec inputs)
+    await expect(page.locator('#epmin')).toBeVisible();
+    await expect(page.locator('#epmax')).toBeVisible();
+    await expect(page.locator('#step-mode-select')).toBeVisible();
 
-    // Default eyepiece count should be calculated
+    // Default eyepiece count should be calculated (telescope auto-selected)
     const countVal = await page.locator('#out-count').textContent();
     expect(countVal).not.toBe('—');
   });
@@ -26,15 +27,16 @@ test.describe('Eyepiece Calculator E2E Tests', () => {
     await expect(page.locator('#adv-trans-slider')).toBeVisible();
     await expect(page.locator('#card-low')).toBeVisible();
     await expect(page.locator('#card-high')).toBeVisible();
+
+    // Personal limit controls should be visible in advanced mode
+    await expect(page.locator('#personal-ep-limit')).toBeVisible();
+    await expect(page.locator('#enforce-personal-limit')).toBeVisible();
   });
 
   test('should trigger error outlines on range violations', async ({ page }) => {
     await page.goto('/');
 
-    // Open the closed wrapper first
-    await page.click('#desc-range-link');
-
-    // Input epMin >= epMax
+    // Min and max are directly visible in simple mode
     await page.locator('#epmin').fill('8');
     await page.locator('#epmax').fill('7');
 
@@ -49,8 +51,8 @@ test.describe('Eyepiece Calculator E2E Tests', () => {
   test('should clamp values when Enforce limit is active', async ({ page }) => {
     await page.goto('/');
 
-    // Open the closed wrapper first
-    await page.click('#desc-range-link');
+    // Switch to advanced to access personal limit controls
+    await page.click('button:has-text("Advanced Setup")');
 
     // Set personal limit to 6mm
     await page.locator('#personal-ep-limit').fill('6');
@@ -72,39 +74,28 @@ test.describe('Eyepiece Calculator E2E Tests', () => {
     // Navigate with hash query params
     await page.goto('/#fr=8&mode=fl&val=1200&min=1.0&max=6.0&type=simple&strat=percent&step=35');
 
-    // Verify inputs have loaded parameters
-    await expect(page.locator('#fratio')).toHaveValue('8');
-    await expect(page.locator('#fl-ap-input')).toHaveValue('1200');
+    // Verify exit pupil inputs have loaded parameters
     await expect(page.locator('#epmin')).toHaveValue('1');
     await expect(page.locator('#epmax')).toHaveValue('6');
   });
 
-  test('should toggle pupil-range-wrapper open and closed under correct modes and subtitle link clicks', async ({ page }) => {
+  test('should display EP/FL toggles in advanced mode and plain labels in simple mode', async ({ page }) => {
     await page.goto('/');
 
-    const wrapper = page.locator('.pupil-range-wrapper');
+    // In simple mode, there should be plain labels, no segmented toggle buttons for min/max
+    const minModeToggle = page.locator('#min-mode-toggle');
+    await expect(minModeToggle).not.toBeVisible();
 
-    // 1. In Simple Setup mode on initial load, it should be closed
-    await expect(wrapper).not.toHaveClass(/open/);
-
-    // 2. Swapping to Advanced Setup should make it open
+    // Switch to advanced
     await page.click('button:has-text("Advanced Setup")');
-    await expect(wrapper).toHaveClass(/open/);
 
-    // 3. Swapping back to Simple Setup should close it
+    // In advanced mode, segmented toggles should be visible
+    await expect(minModeToggle).toBeVisible();
+    await expect(page.locator('#max-mode-toggle')).toBeVisible();
+
+    // Switch back to simple
     await page.click('button:has-text("Simple Setup")');
-    await expect(wrapper).not.toHaveClass(/open/);
-
-    // 4. Clicking the desc-range-link in the subtitle should open it
-    await page.click('#desc-range-link');
-    await expect(wrapper).toHaveClass(/open/);
-
-    // 5. Check that epmin is focused
-    await expect(page.locator('#epmin')).toBeFocused();
-
-    // 6. Clicking desc-range-link again should close it
-    await page.click('#desc-range-link');
-    await expect(wrapper).not.toHaveClass(/open/);
+    await expect(minModeToggle).not.toBeVisible();
   });
 
   test('should layout charts in 2x2 grid on medium viewports and wrap to 1x4 list on narrow viewports', async ({ page }) => {
@@ -144,10 +135,11 @@ test.describe('Eyepiece Calculator E2E Tests', () => {
     await expect(page.locator('[data-testid="telescope-tab-tele_default_1"]')).toHaveText('8" Dobsonian');
     await expect(page.locator('[data-testid="telescope-tab-tele_default_2"]')).toHaveText('80mm Refractor');
 
-    // 2. Select 80mm Refractor -> Focal ratio should become 7.5, Focal length should become 600
+    // 2. Select 80mm Refractor -> Stats should update (telescope is auto-synced)
     await page.click('[data-testid="telescope-tab-tele_default_2"]');
-    await expect(page.locator('#fratio')).toHaveValue('7.5');
-    await expect(page.locator('#fl-ap-input')).toHaveValue('600');
+    // Verify a stat updated (eyepiece count should be recalculated)
+    const countVal = await page.locator('#out-count').textContent();
+    expect(countVal).not.toBe('—');
 
     // 3. Add a new telescope
     await page.click('[data-testid="add-telescope-btn"]');
@@ -163,10 +155,6 @@ test.describe('Eyepiece Calculator E2E Tests', () => {
     const newTabWrap = page.locator('.telescope-tab-btn-wrap.active');
     await expect(newTabWrap.locator('.telescope-tab-name')).toHaveText('My Custom Scope');
 
-    // Main inputs should be updated to match new scope
-    await expect(page.locator('#fratio')).toHaveValue('4');
-    await expect(page.locator('#fl-ap-input')).toHaveValue('800');
-
     // 4. Edit the telescope
     await page.click('.telescope-tab-btn-wrap.active [data-testid^="edit-telescope-"]');
     await page.locator('#modal-label').fill('My Custom Scope (Edited)');
@@ -174,14 +162,56 @@ test.describe('Eyepiece Calculator E2E Tests', () => {
     
     await expect(page.locator('.telescope-tab-btn-wrap.active .telescope-tab-name')).toHaveText('My Custom Scope (Edited)');
 
-    // 5. Delete the telescope
-    page.once('dialog', async dialog => {
-      expect(dialog.message()).toContain('Are you sure you want to delete');
-      await dialog.accept();
-    });
+    // 5. Delete the telescope (promptless)
     await page.click('.telescope-tab-btn-wrap.active [data-testid^="delete-telescope-"]');
 
     // Tab should be removed
     await expect(page.locator('.telescope-tab-name', { hasText: 'My Custom Scope (Edited)' })).not.toBeVisible();
+  });
+
+  test('should preserve high-precision aperture and format correctly on unit toggles', async ({ page }) => {
+    await page.goto('/');
+
+    // 1. Click Add Telescope
+    await page.click('[data-testid="add-telescope-btn"]');
+
+    // 2. Select 'in' unit and enter 24 inches, f/3, 1829mm focal length
+    await page.click('#modal-unit-toggle >> button:has-text("in")');
+    await page.locator('#modal-aperture').fill('24');
+    await page.locator('#modal-fratio').fill('3');
+    await page.locator('#modal-flength').fill('1829');
+    await page.locator('#modal-label').fill('24" F/3 Scope');
+    await page.click('button:has-text("Save Telescope")');
+
+    // 3. Edit the newly added telescope
+    await page.click('.telescope-tab-btn-wrap.active [data-testid^="edit-telescope-"]');
+
+    // 4. Verify initial state is MM and 609.6 (since 24 * 25.4 = 609.6)
+    await expect(page.locator('#modal-unit-toggle >> button:has-text("mm")')).toHaveClass(/active/);
+    await expect(page.locator('#modal-aperture')).toHaveValue('609.6');
+
+    // 5. Toggle to inches -> value should display as 24
+    await page.click('#modal-unit-toggle >> button:has-text("in")');
+    await expect(page.locator('#modal-aperture')).toHaveValue('24');
+
+    // 6. Toggle to MM again -> value should remain exactly 609.6 (not rounded up to 610)
+    await page.click('#modal-unit-toggle >> button:has-text("mm")');
+    await expect(page.locator('#modal-aperture')).toHaveValue('609.6');
+
+    // 7. Toggle to inches again -> value should display as 24
+    await page.click('#modal-unit-toggle >> button:has-text("in")');
+    await expect(page.locator('#modal-aperture')).toHaveValue('24');
+
+    // 8. Toggle to MM and enter exactly 610
+    await page.click('#modal-unit-toggle >> button:has-text("mm")');
+    await page.locator('#modal-aperture').fill('610');
+
+    // 9. Toggle to inches -> displays as 24 (since 610 / 25.4 = 24.0157... which formats as 24)
+    await page.click('#modal-unit-toggle >> button:has-text("in")');
+    await expect(page.locator('#modal-aperture')).toHaveValue('24');
+
+    // 10. Toggle back to MM -> value should display as exactly 610 (not rounded down to 609.6)
+    await page.click('#modal-unit-toggle >> button:has-text("mm")');
+    await expect(page.locator('#modal-aperture')).toHaveValue('610');
   });
 });

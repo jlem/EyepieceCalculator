@@ -1,7 +1,6 @@
 import React from 'react';
 import { SetupTabs } from './SetupTabs';
-import { TelescopeInputs } from './TelescopeInputs';
-import { PersonalLimitControls } from './PersonalLimitControls';
+import { PlannerControls } from './PlannerControls';
 import { AdvancedTransitionSlider } from './AdvancedTransitionSlider';
 import { AdvancedStrategyCard } from './AdvancedStrategyCard';
 import { StatsSummary } from './StatsSummary';
@@ -15,33 +14,25 @@ import { EyepieceSet } from '../models/EyepieceSet';
 interface PlannerTabProps {
   inputs: CalculatorInputs;
   onChange: <K extends keyof CalculatorInputs>(key: K, value: CalculatorInputs[K]) => void;
-  onInputModeToggle: (nextMode: 'fl' | 'ap') => void;
-  onApertureUnitToggle: (nextUnit: 'mm' | 'in') => void;
   onShareClick: () => void;
   minEnforced: boolean;
   maxEnforced: boolean;
-  pupilRangeOpen: boolean;
-  setPupilRangeOpen: React.Dispatch<React.SetStateAction<boolean>>;
   telescope: Telescope | null;
   hasFlength: boolean;
   eyepieceSet: EyepieceSet | null;
-  focusTelescopeInput: () => void;
+  onAddTelescopeClick: () => void;
 }
 
 export const PlannerTab: React.FC<PlannerTabProps> = ({
   inputs,
   onChange,
-  onInputModeToggle,
-  onApertureUnitToggle,
   onShareClick,
   minEnforced,
   maxEnforced,
-  pupilRangeOpen,
-  setPupilRangeOpen,
   telescope,
   hasFlength,
   eyepieceSet,
-  focusTelescopeInput,
+  onAddTelescopeClick,
 }) => {
   return (
     <div className="app-layout" data-testid="planner-tab">
@@ -52,71 +43,54 @@ export const PlannerTab: React.FC<PlannerTabProps> = ({
             activeTab={inputs.stepModeType}
             onChange={(tab) => {
               onChange('stepModeType', tab);
-              setPupilRangeOpen(tab === 'advanced');
             }}
             onShare={onShareClick}
           />
 
-          {/* Telescope Specs */}
-          <TelescopeInputs
+          {/* Exit Pupil Range & Step Controls */}
+          <PlannerControls
             inputs={inputs}
-            onChange={(key, value) => {
-              if (key === 'inputMode') {
-                onInputModeToggle(value as any);
-              } else if (key === 'apertureUnit') {
-                onApertureUnitToggle(value as any);
-              } else {
-                onChange(key, value);
-              }
-            }}
-          />
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
-            <button
-              type="button"
-              id="desc-range-link"
-              onClick={(e) => {
-                e.preventDefault();
-                setPupilRangeOpen((prev) => {
-                  const next = !prev;
-                  if (next) {
-                    setTimeout(() => {
-                      const minEl = document.getElementById('epmin');
-                      if (minEl) {
-                        minEl.focus();
-                        minEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                      }
-                    }, 0);
-                  }
-                  return next;
-                });
-              }}
-              style={{
-                background: 'none',
-                border: 'none',
-                padding: 0,
-                color: 'var(--accent)',
-                textDecoration: 'underline',
-                textDecorationStyle: 'dotted',
-                cursor: 'pointer',
-                fontSize: '0.85rem',
-                outline: 'none',
-              }}
-            >
-              {pupilRangeOpen ? 'Hide exit pupil limits' : 'Customize exit pupil limits'}
-            </button>
-          </div>
-
-          {/* Exit Pupil Ranges (Always directly below controls) */}
-          <PersonalLimitControls
-            inputs={inputs}
-            isOpen={pupilRangeOpen}
             minEnforcedActive={minEnforced}
             maxEnforcedActive={maxEnforced}
             onChange={onChange}
           />
 
-          {/* Advanced Configurations Slider & Cards */}
+          {/* Advanced: Personal Limit + Enforce row */}
+          {inputs.stepModeType === 'advanced' && (
+            <div className="personal-limit-row">
+              <div>
+                <label htmlFor="personal-ep-limit">Personal exit pupil limit (mm)</label>
+                <input
+                  type="number"
+                  id="personal-ep-limit"
+                  value={inputs.personalEpLimit || ''}
+                  min="0.1"
+                  max="25"
+                  step="0.1"
+                  onChange={(e) => onChange('personalEpLimit', parseFloat(e.target.value) || 0)}
+                />
+              </div>
+              <div className="enforce-limit-col">
+                <label style={{ userSelect: 'none' }}>&nbsp;</label>
+                <div className="checkbox-wrap">
+                  <input
+                    type="checkbox"
+                    id="enforce-personal-limit"
+                    checked={inputs.enforceLimit}
+                    onChange={(e) => onChange('enforceLimit', e.target.checked)}
+                  />
+                  <label
+                    htmlFor="enforce-personal-limit"
+                    style={{ cursor: 'pointer', userSelect: 'none', marginLeft: '8px', marginBottom: 0, display: 'inline-block' }}
+                  >
+                    Enforce limit
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Advanced: Transition Slider & Strategy Cards */}
           {inputs.stepModeType === 'advanced' && (
             <div id="advanced-step-container" className="advanced-step-container">
               <AdvancedTransitionSlider
@@ -160,6 +134,7 @@ export const PlannerTab: React.FC<PlannerTabProps> = ({
               : null
           }
           personalEpLimit={inputs.personalEpLimit}
+          stepModeType={inputs.stepModeType}
         />
 
         {/* Eyepiece Grid Table */}
@@ -167,6 +142,7 @@ export const PlannerTab: React.FC<PlannerTabProps> = ({
           eyepieceSet={eyepieceSet}
           personalEpLimit={inputs.personalEpLimit}
           hasFlength={hasFlength}
+          stepModeType={inputs.stepModeType}
         />
 
         {/* Formulas reference guide */}
@@ -178,7 +154,7 @@ export const PlannerTab: React.FC<PlannerTabProps> = ({
         eyepieceSet={eyepieceSet}
         telescope={telescope}
         hasFlength={hasFlength}
-        onFocusTelescopeInput={focusTelescopeInput}
+        onAddTelescopeClick={onAddTelescopeClick}
       />
     </div>
   );

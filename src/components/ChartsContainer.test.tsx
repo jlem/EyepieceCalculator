@@ -9,13 +9,13 @@ import { Telescope } from '../models/Telescope';
 
 describe('ChartsContainer Component', () => {
   it('should render dashes when eyepieceSet is null or empty', () => {
-    const handleFocus = vi.fn();
+    const handleAddClick = vi.fn();
     render(
       <ChartsContainer
         eyepieceSet={null}
         telescope={null}
         hasFlength={false}
-        onFocusTelescopeInput={handleFocus}
+        onAddTelescopeClick={handleAddClick}
       />
     );
 
@@ -25,7 +25,7 @@ describe('ChartsContainer Component', () => {
   });
 
   it('should render charts and magnification placeholder link when focal length is missing', () => {
-    const handleFocus = vi.fn();
+    const handleAddClick = vi.fn();
     const tel = new Telescope('', 'Test', 200, 1000, 5, '2');
     const ep1 = new Eyepiece(10);
     const ep2 = new Eyepiece(20);
@@ -39,15 +39,15 @@ describe('ChartsContainer Component', () => {
         eyepieceSet={set}
         telescope={tel}
         hasFlength={false}
-        onFocusTelescopeInput={handleFocus}
+        onAddTelescopeClick={handleAddClick}
       />
     );
 
     // Magnification chart should render placeholder link
-    const link = screen.getByRole('button', { name: /Enter a focal length/ });
+    const link = screen.getByRole('button', { name: /Add or select a telescope/ });
     expect(link).toBeInTheDocument();
 
     fireEvent.click(link);
-    expect(handleFocus).toHaveBeenCalled();
+    expect(handleAddClick).toHaveBeenCalled();
   });
 });

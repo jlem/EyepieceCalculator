@@ -7,14 +7,14 @@ interface ChartsContainerProps {
   eyepieceSet: EyepieceSet | null;
   telescope: Telescope | null;
   hasFlength: boolean;
-  onFocusTelescopeInput: () => void;
+  onAddTelescopeClick: () => void;
 }
 
 export const ChartsContainer: React.FC<ChartsContainerProps> = ({
   eyepieceSet,
   telescope,
   hasFlength,
-  onFocusTelescopeInput,
+  onAddTelescopeClick,
 }) => {
   if (!eyepieceSet || eyepieceSet.count === 0) {
     // If range error is active or no data, we still render the layout grid but show empty states / defaults
@@ -131,10 +131,10 @@ export const ChartsContainer: React.FC<ChartsContainerProps> = ({
                   }}
                   onClick={(e) => {
                     e.preventDefault();
-                    onFocusTelescopeInput();
+                    onAddTelescopeClick();
                   }}
                 >
-                  Enter a focal length or aperture
+                  Add or select a telescope
                 </button>{' '}
                 to calculate magnifications and show this graph
               </span>

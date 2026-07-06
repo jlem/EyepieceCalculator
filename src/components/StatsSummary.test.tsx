@@ -29,6 +29,7 @@ describe('StatsSummary Component', () => {
         longestFL={30.0}
         longestEp={6.0}
         personalEpLimit={7.0}
+        stepModeType="advanced"
       />
     );
 
@@ -46,6 +47,7 @@ describe('StatsSummary Component', () => {
         longestFL={40.0}
         longestEp={8.0}
         personalEpLimit={7.0}
+        stepModeType="advanced"
       />
     );
 

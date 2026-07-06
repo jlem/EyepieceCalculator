@@ -177,19 +177,12 @@
     opacity: 0.35;
   }
 
-  .pupil-range-wrapper {
-    display: none;
-    margin-top: 1.5rem;
-  }
-
-  .pupil-range-wrapper.open {
-    display: block;
-  }
 
   .personal-limit-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px;
+    margin-top: 16px;
     margin-bottom: 16px;
     width: 100%;
   }
@@ -286,14 +279,10 @@
     right: 12px;
     top: 50%;
     transform: translateY(-50%);
-    display: none;
+    display: flex;
     align-items: center;
     justify-content: center;
     cursor: help;
-  }
-
-  .input-warning-icon.show {
-    display: flex;
   }
 
   tr.row-warn td {

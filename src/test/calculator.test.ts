@@ -4,9 +4,23 @@ import {
   computeSetBrightness,
   computeSetPupil,
   computeSetFixed,
-  calculateEyepieceSet
+  calculateEyepieceSet,
+  cleanNumber
 } from '../utils/calculator';
 import { CalculatorInputs } from '../utils/types';
+
+describe('Calculator cleanNumber', () => {
+  it('should clean numbers to 4 decimal places by default', () => {
+    expect(cleanNumber(0.5)).toBe(0.5);
+    expect(cleanNumber(1.5555555555555556)).toBe(1.5556);
+    expect(cleanNumber(1.5555499999999996)).toBe(1.5555);
+    expect(cleanNumber(7.000000000000001)).toBe(7);
+  });
+
+  it('should let me override precision', () => {
+    expect(cleanNumber(0.525234, 2)).toBe(0.53);
+  });
+})
 
 describe('Calculator Utilities', () => {
   it('should compute geometric percent eyepiece spacing correctly', () => {

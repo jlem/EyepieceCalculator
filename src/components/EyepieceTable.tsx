@@ -5,12 +5,14 @@ interface EyepieceTableProps {
   eyepieceSet: EyepieceSet | null;
   personalEpLimit: number;
   hasFlength: boolean;
+  stepModeType?: 'simple' | 'advanced';
 }
 
 export const EyepieceTable: React.FC<EyepieceTableProps> = ({
   eyepieceSet,
   personalEpLimit,
   hasFlength,
+  stepModeType,
 }) => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
@@ -56,7 +58,7 @@ export const EyepieceTable: React.FC<EyepieceTableProps> = ({
         </thead>
         <tbody>
           {sortedCalcs.map((calc, i) => {
-            const isWarn = calc.exitPupil > personalEpLimit;
+            const isWarn = stepModeType === 'advanced' && calc.exitPupil > personalEpLimit;
             const eyepieceNum = eyepieceSet.calculations.indexOf(calc) + 1;
 
             // Delta Brightness

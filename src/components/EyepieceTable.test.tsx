@@ -25,7 +25,7 @@ describe('EyepieceTable Component', () => {
     ]);
 
     const { container } = render(
-      <EyepieceTable eyepieceSet={set} personalEpLimit={3.0} hasFlength={true} />
+      <EyepieceTable eyepieceSet={set} personalEpLimit={3.0} hasFlength={true} stepModeType="advanced" />
     );
 
     const rows = screen.getAllByRole('row');

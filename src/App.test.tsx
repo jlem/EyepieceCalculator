@@ -10,10 +10,9 @@ describe('App Layout Component', () => {
     // Check header
     expect(screen.getByText('Eyepiece Planner')).toBeInTheDocument();
 
-    // Check simple controls are rendered
-    expect(screen.getByLabelText('Focal ratio (f/#)')).toBeInTheDocument();
-    expect(screen.getByText('Focal Length')).toBeInTheDocument();
-    expect(screen.getByText('Aperture')).toBeInTheDocument();
+    // Check simple controls are rendered (exit pupil labels, not telescope specs)
+    expect(screen.getByLabelText('Min exit pupil')).toBeInTheDocument();
+    expect(screen.getByLabelText('Max exit pupil')).toBeInTheDocument();
     expect(screen.getByLabelText('Step Strategy')).toBeInTheDocument();
   });
 
@@ -26,12 +25,16 @@ describe('App Layout Component', () => {
     // Check for advanced elements
     expect(screen.getByRole('heading', { name: /Low Range/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /High Range/i })).toBeInTheDocument();
+
+    // Personal limit controls should be visible in advanced mode
+    expect(screen.getByLabelText('Personal exit pupil limit (mm)')).toBeInTheDocument();
+    expect(screen.getByLabelText('Enforce limit')).toBeInTheDocument();
   });
 
   it('should trigger range error highlights if epMin >= epMax', () => {
     const { container } = render(<App />);
 
-    // Set epMin input to be larger than epMax
+    // Min and max inputs are directly visible in simple mode now
     const minInput = container.querySelector('#epmin') as HTMLInputElement;
     const maxInput = container.querySelector('#epmax') as HTMLInputElement;
 
@@ -89,9 +92,9 @@ describe('App Layout Component', () => {
   it('should default to Planner tab and switch tabs when clicked and update pathname', () => {
     window.history.replaceState(null, '', '/planner');
     render(<App />);
-    
-    // Planner is active by default (e.g. telescope controls are visible)
-    expect(screen.getByLabelText('Focal ratio (f/#)')).toBeInTheDocument();
+
+    // Planner is active by default (exit pupil controls visible)
+    expect(screen.getByTestId('planner-tab')).toBeInTheDocument();
     expect(screen.queryByTestId('database-tab')).not.toBeInTheDocument();
     expect(screen.queryByTestId('recommendations-tab')).not.toBeInTheDocument();
 
@@ -101,7 +104,7 @@ describe('App Layout Component', () => {
     // Database tab placeholder should be visible, planner should be hidden
     expect(window.location.pathname).toBe('/database');
     expect(screen.getByTestId('database-tab')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Focal ratio (f/#)')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('planner-tab')).not.toBeInTheDocument();
 
     // Click Recommendations tab
     fireEvent.click(screen.getByText('Recommendations'));
@@ -110,14 +113,14 @@ describe('App Layout Component', () => {
     expect(window.location.pathname).toBe('/recommendations');
     expect(screen.getByTestId('recommendations-tab')).toBeInTheDocument();
     expect(screen.queryByTestId('database-tab')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Focal ratio (f/#)')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('planner-tab')).not.toBeInTheDocument();
 
     // Click Planner tab again
     fireEvent.click(screen.getByText('Planner'));
 
     // Planner is back
     expect(window.location.pathname).toBe('/planner');
-    expect(screen.getByLabelText('Focal ratio (f/#)')).toBeInTheDocument();
+    expect(screen.getByTestId('planner-tab')).toBeInTheDocument();
 
     // Clean up
     window.history.replaceState(null, '', '/planner');
@@ -127,7 +130,7 @@ describe('App Layout Component', () => {
     window.history.replaceState(null, '', '/database');
     render(<App />);
     expect(screen.getByTestId('database-tab')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Focal ratio (f/#)')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('planner-tab')).not.toBeInTheDocument();
     // Clean up
     window.history.replaceState(null, '', '/planner');
   });
@@ -136,7 +139,7 @@ describe('App Layout Component', () => {
     window.history.replaceState(null, '', '/recommendations');
     render(<App />);
     expect(screen.getByTestId('recommendations-tab')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Focal ratio (f/#)')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('planner-tab')).not.toBeInTheDocument();
     // Clean up
     window.history.replaceState(null, '', '/planner');
   });
@@ -144,7 +147,7 @@ describe('App Layout Component', () => {
   it('should switch tabs when window popstate event fires', () => {
     window.history.replaceState(null, '', '/planner');
     render(<App />);
-    expect(screen.getByLabelText('Focal ratio (f/#)')).toBeInTheDocument();
+    expect(screen.getByTestId('planner-tab')).toBeInTheDocument();
 
     // Trigger popstate event programmatically wrapped in act
     act(() => {
@@ -153,7 +156,7 @@ describe('App Layout Component', () => {
     });
 
     expect(screen.getByTestId('database-tab')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Focal ratio (f/#)')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('planner-tab')).not.toBeInTheDocument();
 
     act(() => {
       window.history.replaceState(null, '', '/recommendations');
@@ -166,7 +169,7 @@ describe('App Layout Component', () => {
       window.history.replaceState(null, '', '/planner');
       window.dispatchEvent(new PopStateEvent('popstate'));
     });
-    expect(screen.getByLabelText('Focal ratio (f/#)')).toBeInTheDocument();
+    expect(screen.getByTestId('planner-tab')).toBeInTheDocument();
 
     // Clean up
     window.history.replaceState(null, '', '/planner');
@@ -179,15 +182,10 @@ describe('App Layout Component', () => {
     ];
     localStorage.setItem('saved_telescopes', JSON.stringify(mockTelescopes));
 
-    const { container } = render(<App />);
+    render(<App />);
 
-    // 2. Mock telescope should be rendered as a tab
+    // 2. Mock telescope should be rendered as a tab and auto-selected
     expect(screen.getByText('Mock Dobsonian')).toBeInTheDocument();
-
-    // 3. Select Mock Dobsonian and assert input updates
-    fireEvent.click(screen.getByText('Mock Dobsonian'));
-    expect(screen.getByLabelText('Focal ratio (f/#)')).toHaveValue(5);
-    expect(container.querySelector('#fl-ap-input')).toHaveValue('1250');
 
     // Clean up
     localStorage.removeItem('saved_telescopes');

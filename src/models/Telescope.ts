@@ -1,3 +1,5 @@
+import { cleanNumber } from '../utils/calculator';
+
 export class Telescope {
   readonly id: string;
   readonly name: string;
@@ -17,10 +19,28 @@ export class Telescope {
   ) {
     this.id = id;
     this.name = name;
-    this.aperture = aperture;
-    this.focalLength = focalLength;
-    this.focalRatio = focalRatio;
+    this.aperture = cleanNumber(aperture, 4);
+    this.focalLength = cleanNumber(focalLength, 4);
+    this.focalRatio = cleanNumber(focalRatio, 4);
     this.focuserSize = focuserSize;
-    this.apertureInches = aperture / 25.4;
+    this.apertureInches = cleanNumber(aperture / 25.4, 4);
+  }
+
+  displayAperture(unit: 'mm' | 'in'): string {
+    const val = unit === 'in' ? this.apertureInches : this.aperture;
+    return Telescope.formatValue(val);
+  }
+
+  static mmToInches(mm: number): number {
+    return cleanNumber(mm / 25.4, 4);
+  }
+
+  static inchesToMm(inches: number): number {
+    return cleanNumber(inches * 25.4, 4);
+  }
+
+  static formatValue(value: number): string {
+    const rounded = Math.round(value * 10) / 10;
+    return rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1);
   }
 }

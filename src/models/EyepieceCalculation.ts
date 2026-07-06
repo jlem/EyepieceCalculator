@@ -1,5 +1,6 @@
 import { Telescope } from './Telescope';
 import { Eyepiece } from './Eyepiece';
+import { cleanNumber } from '../utils/calculator';
 
 export class EyepieceCalculation {
   readonly eyepiece: Eyepiece;
@@ -11,10 +12,10 @@ export class EyepieceCalculation {
   }
 
   get exitPupil(): number {
-    return this.eyepiece.focalLength / this.telescope.focalRatio;
+    return cleanNumber(this.eyepiece.focalLength / this.telescope.focalRatio);
   }
 
   get magnification(): number {
-    return this.telescope.focalLength > 0 ? this.telescope.focalLength / this.eyepiece.focalLength : 0;
+    return cleanNumber(this.telescope.focalLength > 0 ? this.telescope.focalLength / this.eyepiece.focalLength : 0);
   }
 }

@@ -30,7 +30,8 @@ const parseTelescopeSpecs = (nameStr: string): ParsedSpecs | null => {
     if (frVal > 0) {
       if (apInchesMatch) {
         const apVal = parseFloat(apInchesMatch[1]);
-        const flVal = Math.round(apVal * 25.4 * frVal);
+        const apMM = Telescope.inchesToMm(apVal);
+        const flVal = Math.round(apMM * frVal);
         return {
           aperture: apVal.toString(),
           apertureUnit: 'in',
@@ -58,7 +59,7 @@ const parseTelescopeSpecs = (nameStr: string): ParsedSpecs | null => {
     const secondNum = parseFloat(slashMatch[2]);
     if (firstNum > 0 && secondNum > 0) {
       const isInch = firstNum < 30;
-      const apMM = isInch ? firstNum * 25.4 : firstNum;
+      const apMM = isInch ? Telescope.inchesToMm(firstNum) : firstNum;
       const frVal = secondNum / apMM;
       return {
         aperture: firstNum.toString(),
@@ -79,14 +80,19 @@ export const TelescopeModal: React.FC<TelescopeModalProps> = ({
   telescopeToEdit,
 }) => {
   const [name, setName] = useState('');
-  const [focalRatio, setFocalRatio] = useState('5');
-  const [focalLength, setFocalLength] = useState('1000');
-  const [aperture, setAperture] = useState('200');
+  const [focalRatio, setFocalRatio] = useState('');
+  const [focalLength, setFocalLength] = useState('');
+  const [aperture, setAperture] = useState('');
   const [apertureUnit, setApertureUnit] = useState<'mm' | 'in'>('mm');
   const [focuserSize, setFocuserSize] = useState<'1.25' | '2' | '3'>('2');
   const [lastTyped, setLastTyped] = useState<'fl' | 'ap'>('fl');
   const [errorMsg, setErrorMsg] = useState('');
   const [focusedField, setFocusedField] = useState<'fl' | 'ap' | null>(null);
+
+  // Internal high-precision numeric values
+  const [apertureMm, setApertureMm] = useState<number>(0);
+  const [focalLengthMm, setFocalLengthMm] = useState<number>(0);
+  const [focalRatioVal, setFocalRatioVal] = useState<number>(0);
 
   useEffect(() => {
     if (isOpen) {
@@ -94,18 +100,26 @@ export const TelescopeModal: React.FC<TelescopeModalProps> = ({
         setName(telescopeToEdit.name);
         setFocalRatio(telescopeToEdit.focalRatio.toString());
         setFocalLength(telescopeToEdit.focalLength.toString());
-        setAperture(telescopeToEdit.aperture.toString());
+        setAperture(telescopeToEdit.displayAperture('mm'));
         setApertureUnit('mm'); // Be sure the control indicates mm by default when editing
         setFocuserSize(telescopeToEdit.focuserSize);
         setLastTyped('fl');
+
+        setApertureMm(telescopeToEdit.aperture);
+        setFocalLengthMm(telescopeToEdit.focalLength);
+        setFocalRatioVal(telescopeToEdit.focalRatio);
       } else {
         setName('');
-        setFocalRatio('5');
-        setFocalLength('1000');
-        setAperture('200');
+        setFocalRatio('');
+        setFocalLength('');
+        setAperture('');
         setApertureUnit('mm');
         setFocuserSize('2');
         setLastTyped('fl');
+
+        setApertureMm(0);
+        setFocalLengthMm(0);
+        setFocalRatioVal(0);
       }
       setErrorMsg('');
     }
@@ -117,20 +131,43 @@ export const TelescopeModal: React.FC<TelescopeModalProps> = ({
     setName(val);
     const parsed = parseTelescopeSpecs(val);
     if (parsed) {
-      if (parsed.aperture !== undefined) setAperture(parsed.aperture);
-      if (parsed.apertureUnit !== undefined) setApertureUnit(parsed.apertureUnit);
-      if (parsed.focalLength !== undefined) setFocalLength(parsed.focalLength);
-      if (parsed.focalRatio !== undefined) setFocalRatio(parsed.focalRatio);
+      const unit = parsed.apertureUnit || apertureUnit;
+      const ap = parsed.aperture !== undefined ? parseFloat(parsed.aperture) || 0 : 0;
+      const fr = parsed.focalRatio !== undefined ? parseFloat(parsed.focalRatio) || 0 : 0;
+      const fl = parsed.focalLength !== undefined ? parseFloat(parsed.focalLength) || 0 : 0;
+
+      const apMM = unit === 'in' ? Telescope.inchesToMm(ap) : ap;
+
+      if (parsed.aperture !== undefined) {
+        setAperture(parsed.aperture);
+        setApertureMm(apMM);
+      }
+      if (parsed.apertureUnit !== undefined) {
+        setApertureUnit(parsed.apertureUnit);
+      }
+      if (parsed.focalRatio !== undefined) {
+        setFocalRatio(parsed.focalRatio);
+        setFocalRatioVal(fr);
+      }
+      if (parsed.focalLength !== undefined) {
+        setFocalLength(parsed.focalLength);
+        setFocalLengthMm(fl);
+      } else if (apMM > 0 && fr > 0) {
+        const computedFL = apMM * fr;
+        setFocalLengthMm(computedFL);
+        setFocalLength(Telescope.formatValue(computedFL));
+      }
     }
   };
 
   const handleFocalRatioChange = (val: string) => {
     setFocalRatio(val);
     const fr = parseFloat(val) || 0;
-    if (fr > 0) {
-      const ap = parseFloat(aperture) || 0;
-      const apMM = apertureUnit === 'in' ? ap * 25.4 : ap;
-      setFocalLength(Math.round(apMM * fr).toString());
+    setFocalRatioVal(fr);
+    if (fr > 0 && apertureMm > 0) {
+      const flVal = apertureMm * fr;
+      setFocalLengthMm(flVal);
+      setFocalLength(Telescope.formatValue(flVal));
     }
   };
 
@@ -138,13 +175,15 @@ export const TelescopeModal: React.FC<TelescopeModalProps> = ({
     setFocalLength(val);
     setLastTyped('fl');
     const fl = parseFloat(val) || 0;
-    const fr = parseFloat(focalRatio) || 0;
-    if (fr > 0) {
+    setFocalLengthMm(fl);
+    const fr = focalRatioVal || parseFloat(focalRatio) || 0;
+    if (fr > 0 && fl > 0) {
       const apMM = fl / fr;
+      setApertureMm(apMM);
       if (apertureUnit === 'in') {
-        setAperture((apMM / 25.4).toFixed(2));
+        setAperture(Telescope.formatValue(Telescope.mmToInches(apMM)));
       } else {
-        setAperture(Math.round(apMM).toString());
+        setAperture(Telescope.formatValue(apMM));
       }
     }
   };
@@ -153,19 +192,25 @@ export const TelescopeModal: React.FC<TelescopeModalProps> = ({
     setAperture(val);
     setLastTyped('ap');
     const ap = parseFloat(val) || 0;
-    const apMM = apertureUnit === 'in' ? ap * 25.4 : ap;
-    const fr = parseFloat(focalRatio) || 0;
-    setFocalLength(Math.round(apMM * fr).toString());
+    const apMM = apertureUnit === 'in' ? Telescope.inchesToMm(ap) : ap;
+    setApertureMm(apMM);
+    const fr = focalRatioVal || parseFloat(focalRatio) || 0;
+    if (fr > 0 && apMM > 0) {
+      const flVal = apMM * fr;
+      setFocalLengthMm(flVal);
+      setFocalLength(Telescope.formatValue(flVal));
+    }
   };
 
   const handleApertureUnitChange = (newUnit: 'mm' | 'in') => {
     if (newUnit === apertureUnit) return;
-    const ap = parseFloat(aperture) || 0;
     setApertureUnit(newUnit);
-    if (newUnit === 'in') {
-      setAperture((ap / 25.4).toFixed(2));
-    } else {
-      setAperture(Math.round(ap * 25.4).toString());
+    if (apertureMm > 0) {
+      if (newUnit === 'in') {
+        setAperture(Telescope.formatValue(Telescope.mmToInches(apertureMm)));
+      } else {
+        setAperture(Telescope.formatValue(apertureMm));
+      }
     }
   };
 
@@ -176,10 +221,9 @@ export const TelescopeModal: React.FC<TelescopeModalProps> = ({
       return;
     }
 
-    const fr = parseFloat(focalRatio) || 0;
-    const fl = parseFloat(focalLength) || 0;
-    const ap = parseFloat(aperture) || 0;
-    const apMM = apertureUnit === 'in' ? ap * 25.4 : ap;
+    const fr = focalRatioVal || parseFloat(focalRatio) || 0;
+    const fl = focalLengthMm || parseFloat(focalLength) || 0;
+    const apMM = apertureMm || (apertureUnit === 'in' ? Telescope.inchesToMm(parseFloat(aperture) || 0) : parseFloat(aperture) || 0);
 
     if (fr <= 0 || fl <= 0 || apMM <= 0) {
       setErrorMsg('Focal ratio, focal length, and aperture must be positive values.');

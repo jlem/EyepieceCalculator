@@ -4,6 +4,10 @@ import { EyepieceCalculation } from '../models/EyepieceCalculation';
 import { EyepieceSet } from '../models/EyepieceSet';
 import { CalculatorInputs } from './types';
 
+export function cleanNumber(val: number, precision: number = 4): number {
+  return +val.toFixed(precision);
+}
+
 export function computeSet(fratio: number, stepPct: number, epMin: number, epMax: number) {
   const R = epMax / epMin;
   const k = 1 + stepPct / 100;
@@ -86,7 +90,7 @@ export function runCalculationForSegment(
 
 export function calculateEyepieceSet(inputs: CalculatorInputs): EyepieceSet {
   const { fratio, flengthVal, apertureVal, apertureUnit, inputMode, stepMode, stepVal, stepModeType, epMin, epMax, epTrans, lowStrategy, lowStep, highStrategy, highStep } = inputs;
-  
+
   // Resolve scope focal length
   let flength = 0;
   if (inputMode === 'fl') {
