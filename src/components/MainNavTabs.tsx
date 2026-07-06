@@ -19,17 +19,17 @@ export const MainNavTabs: React.FC<MainNavTabsProps> = ({ activeTab, onChange })
       </button>
       <button
         type="button"
-        className={`main-nav-tab-btn ${activeTab === 'database' ? 'active' : ''}`}
-        onClick={() => onChange('database')}
-      >
-        Eyepiece Database
-      </button>
-      <button
-        type="button"
         className={`main-nav-tab-btn ${activeTab === 'recommendations' ? 'active' : ''}`}
         onClick={() => onChange('recommendations')}
       >
         Recommendations
+      </button>
+      <button
+        type="button"
+        className={`main-nav-tab-btn ${activeTab === 'database' ? 'active' : ''}`}
+        onClick={() => onChange('database')}
+      >
+        Eyepiece Database
       </button>
     </div>
   );
